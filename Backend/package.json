@@ -10,6 +10,9 @@
   "author": "Sumit Kumar Jha",
   "license": "ISC",
   "dependencies": {
-    "dotenv": "^16.4.7"
+    "bcrypt": "^5.1.1",
+    "dotenv": "^16.4.7",
+    "express-validator": "^7.2.1",
+    "jsonwebtoken": "^9.0.2"
   }
 }
