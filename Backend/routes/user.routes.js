@@ -1,6 +1,7 @@
 import express from 'express';
 import { body, validationResult } from 'express-validator';
 import userController from '../Controllers/user.controller.js';
+import authmiddleware from  '../middleware/auth.middleware.js'
 
 const router = express.Router();
 router.post(
@@ -23,5 +24,9 @@ router.post(
 );
 
 router.post('/login',[(body('email').isEmail().withMessage('Invalid Email'),body('password').isLength({min:6}).withMessage('password should be 6'))], userController.loginUser)
+
+router.get('/profile', authmiddleware.authUser, userController.getUserProfile);
+router.get('/logout',authmiddleware.authUser,userController.logoutUser)
+
 
 export default router;
