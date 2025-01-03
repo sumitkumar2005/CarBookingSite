@@ -13,6 +13,10 @@ async function registerUser(req, res, next) {
     try {
         const { fullname, email, password } = req.body;
 
+        const isUser = userModel.findOne({email:email})
+        if(isUser){
+            res.status(400).json({message:"Captain already exits"})
+        }
         // Hash password
         const hashedPassword = await userModel.hashPassword(password);
 
