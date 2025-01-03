@@ -158,7 +158,52 @@ The `/users/login` endpoint allows registered users to log in by providing their
 
 ---
 
+## Endpoint: `/users/logout`
+
+### Description
+The `/users/logout` endpoint allows users to log out by invalidating their current authentication token. The token is added to a blacklist to prevent further use.
+
+### Example Request
+#### Request Headers
+```json
+{
+  "Authorization": "Bearer <JWT Token>"
+}
+```
+
+### Responses
+#### Success Response
+- **Status Code**: 200 OK
+- **Description**: User logout was successful.
+```json
+{
+  "message": "User Logout Successfully"
+}
+```
+
+#### Error Responses
+1. **Invalid Token**
+   - **Status Code**: 401 Unauthorized
+   - **Description**: The provided token is invalid or has already been blacklisted.
+   ```json
+   {
+     "message": "Unauthorized"
+   }
+   ```
+
+2. **Server Errors**
+   - **Status Code**: 500 Internal Server Error
+   - **Description**: An unexpected error occurred while processing the request.
+   ```json
+   {
+     "message": "An error occurred while logging out. Please try again later."
+   }
+   ```
+
+---
+
 ## Notes
 - The password field is securely hashed before storing in the database.
 - The token is a JSON Web Token (JWT) used for authentication in subsequent requests.
 - Ensure the `Authorization` header is set with the token for protected routes.
+- The `/users/logout` endpoint blacklists the token for an hour, ensuring it cannot be reused within this time frame.
