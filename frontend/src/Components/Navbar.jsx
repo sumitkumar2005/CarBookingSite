@@ -1,10 +1,11 @@
 import React from 'react';
-
+import { Link } from 'react-router-dom';
 
 const Navbar = () => {
   return (
     <nav className="flex items-center justify-between px-8 py-4 bg-black text-white">
-    <div className="text-2xl font-bold">Uber</div>
+
+    <Link to={'/'} className='flex items-center justify-center text-2xl font-bold' >Uber</Link>
     <ul className="flex items-center gap-8">
       <li className="hover:underline cursor-pointer">Ride</li>
       <li className="hover:underline cursor-pointer">Drive</li>

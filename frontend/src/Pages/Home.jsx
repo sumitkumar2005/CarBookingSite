@@ -1,10 +1,10 @@
 import React from "react";
+import { Link } from "react-router-dom";
 
 const Home = () => {
   return (
     <div className="min-h-screen bg-white flex flex-col">
       {/* Navbar */}
-      
 
       {/* Main Content */}
       <div className="flex flex-col lg:flex-row justify-between items-start px-8 py-16">
@@ -57,16 +57,21 @@ const Home = () => {
           </div>
 
           {/* See Prices Button */}
-          <button className="w-full py-3 bg-black text-white rounded-lg hover:bg-gray-900 transition">
-            See prices
-          </button>
+          <Link to={'/login'} className=" flex items-center align-middle w-56 justify-center py-3 bg-black text-white rounded-lg hover:bg-gray-900 transition">
+            Continue
+          </Link>
         </div>
 
         {/* Right Section (Map) */}
-        <div className="hidden lg:block w-full h-96 lg:w-1/2 lg:h-[500px] bg-gray-100 mt-8 lg:mt-0 rounded-lg shadow-lg overflow-hidden">
-          {/* Placeholder for map */}
-          <p className="text-center text-gray-500 mt-40">Map Placeholder</p>
-        </div>
+        <div
+          className="hidden lg:block bg-cover bg-contain w-full lg:w-1/2 h-[300px] lg:h-[500px] bg-gray-100 mt-8 lg:mt-0 rounded-lg shadow-lg overflow-hidden"
+          style={{
+            backgroundImage: `url("https://images.unsplash.com/photo-1557404763-69708cd8b9ce?q=80&w=1964&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D")`,
+            backgroundSize: "cover", // Ensures the image covers the entire section
+            backgroundPosition: "center", // Centers the image
+            backgroundRepeat: "no-repeat", // Prevents tiling of the image
+          }}
+        ></div>
       </div>
     </div>
   );
