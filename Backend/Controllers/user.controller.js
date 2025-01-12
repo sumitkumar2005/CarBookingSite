@@ -13,10 +13,12 @@ async function registerUser(req, res, next) {
     try {
         const { fullname, email, password } = req.body;
 
-        const isUser = userModel.findOne({email:email})
-        if(isUser){
-            res.status(400).json({message:"Captain already exits"})
+        // Check if user already exists
+        const isUser = await userModel.findOne({ email });
+        if (isUser) {
+            return res.status(400).json({ message: "User already exists" });
         }
+
         // Hash password
         const hashedPassword = await userModel.hashPassword(password);
 
@@ -30,8 +32,16 @@ async function registerUser(req, res, next) {
 
         // Generate token
         const token = user.generateAuthToken();
-        res.status(201).json({ token, user });
+
+        // Send success response
+        return res.status(201).json({ token, user });
     } catch (error) {
+        // Check if headers have already been sent
+        if (res.headersSent) {
+            console.error("Headers already sent, cannot respond again.");
+            return next(error); // Delegate error to middleware
+        }
+        // Send server error response
         return res.status(500).json({ message: 'Server Error', error: error.message });
     }
 }
