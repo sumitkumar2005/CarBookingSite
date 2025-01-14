@@ -1,16 +1,20 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
-
+import { useNavigate } from "react-router-dom";
+import { UserDataContext } from "../Context/UserContext";
+import { useContext } from "react";
 const UserSignUp = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const [firstname, setfirstname] = useState("")
   const [lastname, setlastname] = useState("")
+  const {userData,setUserData}= useContext(UserDataContext);
+  const navigate = useNavigate()
 
   const handleSignUp = async (e) => {
-    e.preventDefault(); // Prevent page reload
+    e.preventDefault();
 
     if (!firstname || !lastname || !email || !password) {
         setMessage("All fields are required!");
@@ -18,30 +22,30 @@ const UserSignUp = () => {
     }
 
     try {
-        // Prepare the data
         const data = {
-            fullname: {
-                firstname,
-                lastname,
-            },
+            fullname: { firstname, lastname },
             email,
             password,
         };
 
-        // Send signup request to backend
-        const response = await axios.post("http://localhost:5000/users/register", data);
+        const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/users/register`, data);
+        console.log("Response data:", response.data);
 
-        console.log(response.data);
-        setMessage(
-            "User sign up successful! User name: " + (response.data.user?.fullname?.firstname || "Unknown")
-        );
+        // Check the response structure
+        if (response.status==201) {
+          setUserData(response.data.user)
+            setMessage("Signup successful! Redirecting...");
+            navigate("/start");
+        } else {
+            setMessage("Unexpected response format. Signup failed.");
+        }
 
-        // Save token to localStorage (optional)
+        // Save token to localStorage
         if (response.data.token) {
             localStorage.setItem("token", response.data.token);
         }
     } catch (error) {
-        // Handle errors
+        console.error("Error:", error);
         setMessage(
             "Sign up failed: " + (error.response?.data?.message || error.message || "An error occurred.")
         );

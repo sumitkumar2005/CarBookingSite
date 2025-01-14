@@ -41,7 +41,7 @@ userSchema.methods.generateAuthToken = function () {
         { _id: this._id, email: this.email },
         "HELLO_THERE",{expiresIn: '1h'}
     );
-    console.log(token)
+   
     return token;
 };
 

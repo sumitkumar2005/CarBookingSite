@@ -1,25 +1,35 @@
 import React, { useState } from "react";
 import axios from "axios";
-import { Link } from "react-router-dom";
-
+import { Link, useNavigate } from "react-router-dom";
+import { UserDataContext } from "../Context/UserContext";
+import { useContext } from "react";
 const UserLogin = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
 
+  const {userData,setUserData}= useContext(UserDataContext);
+  const navigate = useNavigate()
   const handleLogin = async (e) => {
     e.preventDefault(); // Prevent page reload
 
     try {
       // Send login request to backend
-      const response = await axios.post("http://localhost:5000/users/login", {
+      const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/users/login`, {
         email,
         password,
       });
 
-      console.log(response.data);
+      // Check the response structure
+      if (response.status==200) {
+        setMessage("Signup successful! Redirecting...");
+        setUserData(response.data.user)
+        navigate("/start");
+    } else {
+        setMessage("Unexpected response format. Signup failed.");
+    }
       setMessage("Login successful! User name: " + response.data.user.fullname.firstname);
-      console.log("User name:", response.data.user.fullname.firstname);
+      
 
       // Save token to localStorage (optional)
       localStorage.setItem("token", response.data.token);

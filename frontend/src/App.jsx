@@ -5,6 +5,7 @@ import UserLogin from './Pages/UserLogin';
 import UserSignUp from './Pages/UserSignUp';
 import CaptainLogin from './Pages/CaptainLogin';
 import CaptainSignup from './Pages/CaptainSignup';
+import Start from './Pages/Start';
 
 import Navbar from './Components/Navbar';
 
@@ -14,6 +15,7 @@ function App() {
       <Navbar />
       <Routes>
         <Route path="/" element={<Home />} />
+        <Route path='/start' element={<Start/>}></Route>
         <Route path="/login" element={<UserLogin />} />
         <Route path="/SignUp" element={<UserSignUp />} />
         <Route path="/CaptainLogin" element={<CaptainLogin />} />
