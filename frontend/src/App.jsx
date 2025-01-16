@@ -6,20 +6,25 @@ import UserSignUp from './Pages/UserSignUp';
 import CaptainLogin from './Pages/CaptainLogin';
 import CaptainSignup from './Pages/CaptainSignup';
 import Start from './Pages/Start';
-
+import UserProtectedWrapper from './Pages/UserProctectedWrapper';
 import Navbar from './Components/Navbar';
-
+import CaptainHome from './Pages/CaptainHome';
+import CaptainProctectWrapper from './Pages/CaptainProtectWrapper';
 function App() {
   return (
     <div>
       <Navbar />
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route path='/start' element={<Start/>}></Route>
+        
+        <Route path='/start' element={<UserProtectedWrapper><Start/> </UserProtectedWrapper>}></Route>
+       
         <Route path="/login" element={<UserLogin />} />
         <Route path="/SignUp" element={<UserSignUp />} />
         <Route path="/CaptainLogin" element={<CaptainLogin />} />
         <Route path="/CaptainSignup" element={<CaptainSignup />} />
+
+        <Route path="/CaptainsHome" element={<CaptainProctectWrapper><CaptainHome/></CaptainProctectWrapper>}/>
       </Routes>
     </div>
   );

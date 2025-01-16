@@ -1,9 +1,10 @@
 import userModel from '../models/user.model.js';
 
 async function createUser({ firstname, lastname, email, password }) {
-    if (!firstname || !email || !password) {
-        throw new Error('All fields are required');
-    }
+    if (!firstname) throw new Error('Firstname is required');
+    if (!email) throw new Error('Email is required');
+    if (!password) throw new Error('Password is required');
+
     const user = await userModel.create({
         fullname: { firstname, lastname },
         email,

@@ -32,7 +32,9 @@ async function registerCaptain(req, res, next) {
 
         res.status(201).json({ captain, token });
     } catch (error) {
-        return res.status(500).json({ message: "Server Error", error: error.message });
+return res.status(500).json({ message: "An error occurred while registering the captain.", error: error.message });
+return res.status(500).json({ message: "An error occurred during login.", error: error.message });
+
     }
 }
 async function loginCaptain(req, res, next) {
