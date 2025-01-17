@@ -1,77 +1,89 @@
-import React from "react";
-import { Link } from "react-router-dom";
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const Home = () => {
+  const navigate = useNavigate();
+
+  const handleLoginRedirect = () => {
+    navigate('/login');
+  };
+
   return (
-    <div className="min-h-screen bg-white flex flex-col">
-      {/* Navbar */}
+    <div className="bg-black text-white min-h-screen flex flex-col items-center justify-center transition-all duration-500">
+      {/* Hero Section */}
+      <div className="w-full h-screen bg-cover bg-center flex flex-col items-center justify-center transition-all duration-500" style={{
+        backgroundImage: "url('https://source.unsplash.com/featured/?car,black')",
+      }}>
+        <h1 className="text-5xl md:text-7xl font-bold mb-4 transition-all duration-500">Uber - Your Ride, Your Way</h1>
+        <p className="text-lg md:text-xl max-w-2xl text-center mb-8 transition-all duration-500">
+          Experience the ease of booking rides at your fingertips. From daily commutes to luxurious travel, we have you covered.
+        </p>
+        <button
+          onClick={handleLoginRedirect}
+          className="bg-white text-black px-6 py-3 rounded-full font-semibold hover:bg-gray-300 transition-all duration-300"
+        >
+          Get Started
+        </button>
+      </div>
 
-      {/* Main Content */}
-      <div className="flex flex-col lg:flex-row justify-between items-start px-8 py-16">
-        {/* Left Section */}
-        <div className="max-w-lg w-full space-y-8">
-          <h1 className="text-4xl font-bold leading-snug">
-            Go anywhere with <span className="text-black">Uber</span>
-          </h1>
-
-          {/* Input Fields */}
-          <div className="space-y-4">
-            <div className="relative">
-              <label
-                htmlFor="pickup"
-                className="absolute -top-2 left-4 bg-white px-1 text-sm text-gray-600"
-              >
-                Pickup location
-              </label>
-              <input
-                id="pickup"
-                type="text"
-                placeholder="Enter pickup location"
-                className="w-full border border-gray-300 rounded-lg p-4 focus:outline-none focus:ring-2 focus:ring-black"
-              />
-            </div>
-            <div className="relative">
-              <label
-                htmlFor="dropoff"
-                className="absolute -top-2 left-4 bg-white px-1 text-sm text-gray-600"
-              >
-                Dropoff location
-              </label>
-              <input
-                id="dropoff"
-                type="text"
-                placeholder="Enter dropoff location"
-                className="w-full border border-gray-300 rounded-lg p-4 focus:outline-none focus:ring-2 focus:ring-black"
-              />
-            </div>
+      {/* Features Section */}
+      <div className="w-full px-8 py-16 bg-black text-white transition-all duration-500">
+        <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="flex flex-col items-center text-center">
+            <img
+              src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRjfiEXtIbCmvL_kycawAcVmPgXH2nVM9AZKA&s"
+              alt="Safe Rides"
+              className="w-64 h-64 mb-4 object-cover transition-transform duration-300 hover:scale-105"
+            />
+            <h2 className="text-2xl font-bold mb-2">Safety First</h2>
+            <p>
+              Travel with confidence knowing that your safety is our top priority.
+            </p>
           </div>
-
-          {/* Date and Time */}
-          <div className="flex items-center gap-4">
-            <button className="flex items-center justify-center gap-2 px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-100">
-              <span>Today</span>
-            </button>
-            <button className="flex items-center justify-center gap-2 px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-100">
-              <span>Now</span>
-            </button>
+          <div className="flex flex-col items-center text-center">
+            <img
+              src="https://doubleapex.co.za/wp-content/uploads/2022/10/Audi-R8-Coupe-V10-GT-RWD.jpeg"
+              alt="Luxury Cars"
+              className="w-64 h-64 mb-4 object-cover transition-transform duration-300 hover:scale-105"
+            />
+            <h2 className="text-2xl font-bold mb-2">Luxury Rides</h2>
+            <p>
+              Enjoy premium and luxury cars for a comfortable experience.
+            </p>
           </div>
-
-          {/* See Prices Button */}
-          <Link to={'/login'} className=" flex items-center align-middle w-56 justify-center py-3 bg-black text-white rounded-lg hover:bg-gray-900 transition">
-            Continue
-          </Link>
+          <div className="flex flex-col items-center text-center">
+            <img
+              src="https://designtemplate.tech/Online-Cab-Booking-With-Mobile-Animation-Scene-700.webp"
+              alt="Convenience"
+              className="w-64 h-64 mb-4 object-cover transition-transform duration-300 hover:scale-105"
+            />
+            <h2 className="text-2xl font-bold mb-2">Convenience</h2>
+            <p>
+              Book rides anytime, anywhere with just a few taps.
+            </p>
+          </div>
         </div>
+      </div>
 
-        {/* Right Section (Map) */}
-        <div
-          className="hidden lg:block bg-cover bg-contain w-full lg:w-1/2 h-[300px] lg:h-[500px] bg-gray-100 mt-8 lg:mt-0 rounded-lg shadow-lg overflow-hidden"
-          style={{
-            backgroundImage: `url("https://images.unsplash.com/photo-1557404763-69708cd8b9ce?q=80&w=1964&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D")`,
-            backgroundSize: "cover", // Ensures the image covers the entire section
-            backgroundPosition: "center", // Centers the image
-            backgroundRepeat: "no-repeat", // Prevents tiling of the image
-          }}
-        ></div>
+      {/* About Section */}
+      <div className="w-full px-8 py-16 bg-white text-black transition-all duration-500">
+        <div className="max-w-6xl mx-auto">
+          <h2 className="text-3xl md:text-4xl font-bold text-center mb-8 transition-all duration-500">About Uber</h2>
+          <p className="text-lg md:text-xl text-center mb-8 transition-all duration-500">
+            Uber is the leading ride-hailing platform, connecting riders and drivers worldwide. Whether you need a quick trip across town or a ride to the airport, we ensure a seamless experience for all our users.
+          </p>
+        </div>
+      </div>
+
+      {/* CTA Section */}
+      <div className="w-full px-8 py-16 bg-black text-white text-center transition-all duration-500">
+        <h2 className="text-3xl md:text-4xl font-bold mb-6 transition-all duration-500">Ready to book your ride?</h2>
+        <button
+          onClick={handleLoginRedirect}
+          className="bg-white text-black px-8 py-4 rounded-full font-semibold hover:bg-gray-300 transition-all duration-300"
+        >
+          Login to Book Now
+        </button>
       </div>
     </div>
   );

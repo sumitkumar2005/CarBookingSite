@@ -44,15 +44,6 @@ router.post('/register', [
         .isIn(['car', 'bike', 'auto'])
         .withMessage('Vehicle type must be one of car, bike, or auto'),
 
-    // Validate location
-    body('location.lat')
-        .optional()
-        .isNumeric()
-        .withMessage('Latitude must be a number'),
-    body('location.long')
-        .optional()
-        .isNumeric()
-        .withMessage('Longitude must be a number'),
 ],captainController.registerCaptain)
 
 router.post('/login',[    body('email').isEmail().withMessage('Invalid email address'),
