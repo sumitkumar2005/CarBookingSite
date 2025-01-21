@@ -1,19 +1,19 @@
 import React, { useRef, useEffect, useState } from "react";
-import ConfirmRide from "./ConfirmRide";  // Import ConfirmRide directly here
+import ConfirmRide from "../Components/ConfirmRide"; // Import ConfirmRide directly
+
 
 const CarInfo = ({
   rides,
   selectedRide,
   setSelectedRide,
-  handleConfirmation,
   showCar,
   setshowCar,
-  confirm,
-  setConfirm,
+  DropOff,
+  Pickup,
 }) => {
   const carInfoRef = useRef(null);
   const [selectedCarDetails, setSelectedCarDetails] = useState(null); // Store selected car details locally
-  const [showConfirmModal, setShowConfirmModal] = useState(false); // Control the visibility of ConfirmRide modal
+  const [showConfirmModal, setShowConfirmModal] = useState(false); // Control ConfirmRide modal visibility
 
   useEffect(() => {
     const handleOutsideClick = (event) => {
@@ -22,7 +22,6 @@ const CarInfo = ({
         !carInfoRef.current.contains(event.target) &&
         showCar
       ) {
-        setConfirm(true);
         setshowCar(false); // Hide car info if clicked outside
       }
     };
@@ -66,7 +65,7 @@ const CarInfo = ({
               }`}
             >
               <div className="flex">
-                <img src={ride.img} className="w-32" alt="" />
+                <img src={ride.img} className="w-32" alt={ride.name} />
                 <div>
                   <h2 className="text-left text-2xl font-semibold">
                     {ride.name}
@@ -87,10 +86,6 @@ const CarInfo = ({
               ? "bg-black text-white hover:bg-gray-900"
               : "bg-gray-300 text-gray-500 cursor-not-allowed"
           }`}
-          style={{
-            position: "sticky",
-            bottom: "-10px",
-          }}
         >
           Confirm
         </button>
@@ -99,10 +94,9 @@ const CarInfo = ({
       {/* Conditionally render ConfirmRide component */}
       {showConfirmModal && selectedCarDetails && (
         <ConfirmRide
-          setConfirm={setConfirm}
-          currentLocation="Current Location Address"
-          destination="Destination Address"
-          price={selectedCarDetails.price}
+          setConfirm={setShowConfirmModal}
+          Pickup={Pickup}
+          DropOff={DropOff}
         />
       )}
     </div>

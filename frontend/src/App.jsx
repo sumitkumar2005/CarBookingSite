@@ -10,11 +10,12 @@ import UserProtectedWrapper from './Pages/UserProctectedWrapper';
 import Navbar from './Components/Navbar';
 import CaptainHome from './Pages/CaptainHome';
 import CaptainProctectWrapper from './Pages/CaptainProtectWrapper';
+import WaitingDriver from './Components/WaitingForDriver';
 
 function App() {
   return (
     <div>
-    
+    <WaitingDriver/>
       <Navbar />
       <Routes>
         <Route path="/" element={<Home />} />

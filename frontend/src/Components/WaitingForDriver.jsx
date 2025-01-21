@@ -1,29 +1,42 @@
-import React, { useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { FaMapMarkerAlt } from "react-icons/fa";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import { IoClose } from "react-icons/io5"; // Importing the close icon
 import gsap from "gsap";
 
-function SearchingDriver({ setConfirm }) {
+function WaitingDriver() {
+  // State to control whether the modal is visible or hidden
+  const [isVisible, setIsVisible] = useState(true);
+
+  // Driver and User Data
+  const driver = {
+    name: "John Doe",
+    photo: "https://randomuser.me/api/portraits/men/41.jpg", // Random profile photo
+    carNumber: "PB 140301",
+    carModel: "Toyota Corolla",
+    carPhoto: "https://www.svgrepo.com/show/408292/car-white.svg",
+  };
+
+  // User Data
+  const user = {
+    currentLocation: "803, Kheri Chowk - Kharar...",
+    destination: "Amit Bakers, Kharar, PB",
+  };
+
+  // Close the modal after 10 seconds
   useEffect(() => {
-    // Set popup animation when the component mounts
-    gsap.fromTo(
-      ".confirm-ride-container",
-      { scale: 0.5, opacity: 0 },
-      { scale: 1, opacity: 1, duration: 0.6, ease: "power2.out" }
-    );
-
-    // Close the popup automatically after 10 seconds
     const timer = setTimeout(() => {
-      setConfirm(false);
-    }, 10000);
+      setIsVisible(false); // Close the modal after 10 seconds
+    }, 10000); // 10 seconds
 
-    return () => clearTimeout(timer); // Cleanup the timer
-  }, [setConfirm]);
+    return () => clearTimeout(timer); // Cleanup timer on unmount
+  }, []);
 
   return (
     <div
-      className="fixed inset-0 flex items-center justify-center z-50"
+      className={`fixed inset-0 flex items-center justify-center z-50 transition-all duration-300 ${
+        isVisible ? "" : "hidden" // Conditionally add the 'hidden' class
+      }`}
       style={{
         backgroundColor: "rgba(0, 0, 0, 0.5)", // Optional overlay
       }}
@@ -37,22 +50,35 @@ function SearchingDriver({ setConfirm }) {
         {/* Close Button */}
         <button
           className="absolute top-3 right-3 text-gray-500 hover:text-black transition duration-200"
-          onClick={(e) => setConfirm(false)}
-
+          onClick={() => setIsVisible(false)} // Close the modal on button click
         >
           <IoClose size={24} />
         </button>
 
+        {/* Driver Info */}
+        <div className="flex items-center space-x-4">
+          <img
+            src={driver.photo}
+            alt="Driver"
+            className="w-12 h-12 rounded-full object-cover"
+          />
+          <div>
+            <h3 className="text-lg font-semibold">{driver.name}</h3>
+            <p className="text-sm text-gray-500">{driver.carModel}</p>
+            <p className="text-sm text-gray-500">Car No: {driver.carNumber}</p>
+          </div>
+        </div>
+
         {/* Ride Image */}
         <div className="flex flex-col items-center space-y-6">
           <img
-            src="https://www.svgrepo.com/show/408292/car-white.svg"
+            src={driver.carPhoto}
             className="w-40"
             alt="Car Icon"
           />
-          {/* Searching for Drivers */}
+          {/* Waiting for Driver */}
           <div className="w-full text-center text-gray-800 text-lg font-semibold">
-            Searching for drivers...
+            Waiting for Driver...
           </div>
           {/* Loading Bar */}
           <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden">
@@ -67,7 +93,7 @@ function SearchingDriver({ setConfirm }) {
             <FaMapMarkerAlt className="text-green-500 text-2xl" />
             <div>
               <h3 className="text-lg font-semibold">Current Location</h3>
-              <p className="text-sm text-gray-500">803, Kheri Chowk - Kharar...</p>
+              <p className="text-sm text-gray-500">{user.currentLocation}</p>
             </div>
           </div>
 
@@ -81,7 +107,7 @@ function SearchingDriver({ setConfirm }) {
             <FaMapMarkerAlt className="text-red-500 text-2xl" />
             <div>
               <h3 className="text-lg font-semibold">Destination</h3>
-              <p className="text-sm text-gray-500">Amit Bakers, Kharar, PB</p>
+              <p className="text-sm text-gray-500">{user.destination}</p>
             </div>
           </div>
         </div>
@@ -90,4 +116,4 @@ function SearchingDriver({ setConfirm }) {
   );
 }
 
-export default SearchingDriver;
+export default WaitingDriver;
