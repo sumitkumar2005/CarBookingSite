@@ -5,7 +5,17 @@ export default {
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
-    extend: {},
+     extend: {
+      animation: {
+        'loading-bar': 'loading 1.5s infinite',
+      },
+      keyframes: {
+        loading: {
+          '0%': { transform: 'translateX(-100%)' },
+          '100%': { transform: 'translateX(100%)' },
+        },
+      },
+    },
   },
   plugins: [],
 }

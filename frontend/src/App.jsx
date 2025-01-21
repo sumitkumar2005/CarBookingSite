@@ -10,9 +10,11 @@ import UserProtectedWrapper from './Pages/UserProctectedWrapper';
 import Navbar from './Components/Navbar';
 import CaptainHome from './Pages/CaptainHome';
 import CaptainProctectWrapper from './Pages/CaptainProtectWrapper';
+
 function App() {
   return (
     <div>
+    
       <Navbar />
       <Routes>
         <Route path="/" element={<Home />} />
