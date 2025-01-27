@@ -1,3 +1,4 @@
+// CaptainContext.jsx
 import React, { createContext, useState } from "react";
 
 // Create a context for Captain
@@ -5,18 +6,18 @@ export const CaptainDataContext = createContext();
 
 function CaptainContext({ children }) {
   const [captainData, setCaptainData] = useState({
-    email: '',
+    email: "",
     fullname: {
-      firstname: '',
-      lastname: ''
+      firstname: "",
+      lastname: "",
     },
-    password: '',
+    password: "",
     vehicle: {
-      color: '',
-      plate: '',
+      color: "",
+      plate: "",
       capacity: 0,
-      vehicleType: ''
-    }
+      vehicleType: "",
+    },
   });
 
   return (

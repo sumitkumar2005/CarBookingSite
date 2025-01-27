@@ -1,3 +1,4 @@
+// CaptainLogin.jsx
 import React, { useContext, useState } from "react";
 import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
@@ -8,7 +9,8 @@ const CaptainLogin = () => {
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
-  const { SetCaptainData } = useContext(CaptainDataContext);
+
+  const { setCaptainData } = useContext(CaptainDataContext); // Corrected to `setCaptainData`
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
@@ -23,13 +25,16 @@ const CaptainLogin = () => {
       });
 
       if (response.status === 200) {
-        SetCaptainData(response.data.captain);
-        navigate("/CaptainsHome");
-        localStorage.setItem("token", response.data.token);
+        setCaptainData(response.data.captain); // Update context data
+        localStorage.setItem("token", response.data.token); // Save token
+        navigate("/CaptainHome"); // Redirect to home page
       }
     } catch (error) {
-      // Handle login error
-      setMessage("Login failed: " + (error.response?.data?.message || "An error occurred."));
+      // Improved error handling
+      const errorMessage =
+        error.response?.data?.message || "Login failed. Please try again.";
+      setMessage(errorMessage);
+      console.error("Login failed:", errorMessage);
     } finally {
       setLoading(false); // Stop loading
     }
@@ -43,7 +48,9 @@ const CaptainLogin = () => {
         <form onSubmit={handleLogin}>
           {/* Email Input */}
           <div className="mb-6">
-            <label htmlFor="email" className="block text-sm font-semibold text-gray-800 mb-2">Email Address</label>
+            <label htmlFor="email" className="block text-sm font-semibold text-gray-800 mb-2">
+              Email Address
+            </label>
             <input
               id="email"
               type="email"
@@ -56,7 +63,9 @@ const CaptainLogin = () => {
 
           {/* Password Input */}
           <div className="mb-6">
-            <label htmlFor="password" className="block text-sm font-semibold text-gray-800 mb-2">Password</label>
+            <label htmlFor="password" className="block text-sm font-semibold text-gray-800 mb-2">
+              Password
+            </label>
             <input
               id="password"
               type="password"
@@ -77,9 +86,12 @@ const CaptainLogin = () => {
           </button>
         </form>
 
-        {/* Link to Captain Login */}
+        {/* Link to Sign Up */}
         <div className="mt-6 flex flex-col items-center">
-          <Link to="/CaptainSignup" className="text-black font-semibold hover:underline hover:text-gray-800 transition duration-300">
+          <Link
+            to="/CaptainSignup"
+            className="text-black font-semibold hover:underline hover:text-gray-800 transition duration-300"
+          >
             Or, Sign up Here
           </Link>
         </div>

@@ -10,27 +10,21 @@ async function authUser(req, res, next) {
         const authHeader = req.headers.authorization;
         const token = req.headers.authorization.split(' ')[1] || req.cookies.token;
 
-            console.log(token)
-            const isBlackListed = Blacklist.findOne({token:token});
-            if(isBlackListed)
-            {
-                return res.status(400).json({message:"Unauthorized access"});
-            }
-
+        console.log(token);
+        const isBlackListed = await Blacklist.findOne({ token: token }); // Await the blacklist check
+        if (isBlackListed) {
+            return res.status(400).json({ message: "Unauthorized access" });
+        }
 
         // Verify token
-        const decoded = jwt.verify(token,"HELLO_THERE");
+        const decoded = jwt.verify(token, "HELLO_THERE");
 
         // Find user by ID
         const user = await userModel.findById(decoded._id);
-        if (!user) {
-            return res.status(401).json({ message: "Unauthorized" });
-        }
-
         req.user = user;
         next();
     } catch (error) {
-        return res.status(401).json({ message: "Unauthorized", error: error.message });
+        return res.status(401).json({ message: error.message });
     }
 }
 
@@ -45,7 +39,7 @@ async function authCaptain(req, res, next) {
         if (!token) {
             return res.status(401).json({ message: "Unauthorized: No token provided" });
         }
-console.log(token);
+        console.log(token);
         // Decode the token
         const decoded = jwt.verify(token, "YOUR_CAPTAIN");
         const captain = await captainModel.findById(decoded._id);
@@ -61,6 +55,4 @@ console.log(token);
     }
 }
 
-
-
-export default {authUser,authCaptain};
+export default { authUser, authCaptain };
