@@ -1,9 +1,11 @@
 import React, { useRef, useEffect, useState } from "react";
 import ConfirmRide from "../Components/ConfirmRide"; // Import ConfirmRide directly
+import Start from "../Pages/Start";
 
 
 const CarInfo = ({
-  rides,
+  price,
+  setPrice,
   selectedRide,
   setSelectedRide,
   showCar,
@@ -56,27 +58,7 @@ const CarInfo = ({
         <h1 className="text-4xl font-bold">Choose a Ride</h1>
         <p className="text-xl text-gray-600">Recommended</p>
         <div className="space-y-4">
-          {rides.map((ride) => (
-            <div
-              key={ride.id}
-              onClick={() => setSelectedRide(ride.id)}
-              className={`flex items-center justify-between border rounded-lg p-4 hover:shadow-md cursor-pointer ${
-                selectedRide === ride.id ? "border-black" : "border-gray-300"
-              }`}
-            >
-              <div className="flex">
-                <img src={ride.img} className="w-32" alt={ride.name} />
-                <div>
-                  <h2 className="text-left text-2xl font-semibold">
-                    {ride.name}
-                  </h2>
-                  <p className="text-gray-500">{ride.time}</p>
-                  <p className="text-sm text-gray-400">{ride.description}</p>
-                </div>
-              </div>
-              <p className="text-xl font-bold">{ride.price}</p>
-            </div>
-          ))}
+         
         </div>
         <button
           onClick={handleConfirmationClick}

@@ -7,6 +7,7 @@ import userRoutes from './routes/user.routes.js';
 import cookieParser from 'cookie-parser'
 import captainRoute from './routes/captain.routes.js'
 import mapsRoute from './routes/maps.route.js'
+import rideRoute from './routes/rides.routes.js'
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -22,6 +23,7 @@ app.use('/users', userRoutes); // Correct route usage
 app.use('/captains', captainRoute); // Correct route usage
 // Error handling middleware
 app.use('/maps',mapsRoute)
+app.use('/rides',rideRoute)
 app.use((err, req, res, next) => {
     console.error(err.stack);   
     res.status(500).json({ error: 'Something went wrong!' });

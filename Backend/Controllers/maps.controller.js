@@ -1,4 +1,4 @@
-import { getCoordinate, getDistanceTime, getSuggestions as fetchSuggestions } from "../Services/maps.services.js"; // Rename the imported function
+import mapsServices from "../Services/maps.services.js"; // Ensure consistent naming
 
 export async function getCoordinates(address) {
     try {
@@ -25,20 +25,15 @@ export async function getDistanceAndTime(req, res) {
     }
 }
 
-export async function getSuggestionsController(req, res) { // Rename the controller function
+export async function getSuggestionsController(req, res) {
     try {
-        const { input } = req.query;
-        if (!input || typeof input !== "string") {
-            return res.status(400).json({
-                message: "Invalid input. Please provide a valid input string.",
-            });
-        }
-        const suggestions = await fetchSuggestions(input); // Use the renamed imported function
-        res.json(suggestions);
+      const { input } = req.query;
+      console.log("Controller extracted input:", input);
+      const suggestions = await mapsServices.getSuggestions(input);
+      return res.status(200).json({ success: true, suggestions });
     } catch (error) {
-        console.error("Error fetching suggestions:", error.message);
-        res.status(500).json({
-            message: "Failed to fetch suggestions. Please try again.",
-        });
+      console.error('Error fetching suggestions in controller:', error.message);
+      return res.status(500).json({ success: false, message: 'Failed to fetch suggestions.' });
     }
-}
+  }
+  

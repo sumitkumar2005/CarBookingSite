@@ -2,7 +2,6 @@ import captainModel from "../models/captain.model.js";
 import { validationResult } from "express-validator";
 import Blacklist from "../models/blackList.model.js";
 
-
 async function registerCaptain(req, res, next) {
     console.log("Request Body: ", req.body); // Add this line to check the incoming body
     const errors = validationResult(req);
@@ -32,49 +31,42 @@ async function registerCaptain(req, res, next) {
 
         res.status(201).json({ captain, token });
     } catch (error) {
-return res.status(500).json({ message: "An error occurred while registering the captain.", error: error.message });
-return res.status(500).json({ message: "An error occurred during login.", error: error.message });
-
+        return res.status(500).json({ message: "An error occurred while registering the captain.", error: error.message });
     }
 }
+
 async function loginCaptain(req, res, next) {
     console.log("Request Body: ", req.body); // Add this line to check the incoming body
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() });
     }
-        try {
-            const {email,password} = req.body;
+    try {
+        const { email, password } = req.body;
 
-            const captain = await captainModel.findOne({email}).select('+password');
+        const captain = await captainModel.findOne({ email }).select('+password');
 
-            if(!captain)
-            {
-                return res.status(400).json({messgae:"email or password is wrong"})
-            }
-
-            const isMatch = await captain.comparePassword(password);
-
-            if(!isMatch)
-            {
-               return res.status(401).send({messgae:"Email or Password is wrong"});
-            }
-
-                const token = await captain.generateAuthToken();
-
-                res.cookie('token',token);
-                res.status(200).send({token,captain});
-
-
-        } catch (error) {
-            return res.status(400).json({error});
+        if (!captain) {
+            return res.status(400).json({ message: "Email or password is wrong" });
         }
+
+        const isMatch = await captain.comparePassword(password);
+
+        if (!isMatch) {
+            return res.status(401).send({ message: "Email or Password is wrong" });
+        }
+
+        const token = await captain.generateAuthToken();
+
+        res.cookie('token', token);
+        res.status(200).send({ token, captain });
+    } catch (error) {
+        return res.status(400).json({ error });
+    }
 }
 
-async function CaptainProfile(req,res) {
-     res.status(200).send(req.captain)
-
-
+async function CaptainProfile(req, res) {
+    res.status(200).send(req.captain);
 }
 
 async function logoutCaptain(req, res) {
@@ -95,5 +87,4 @@ async function logoutCaptain(req, res) {
     }
 }
 
-
-export default { registerCaptain,loginCaptain ,logoutCaptain,CaptainProfile};
+export default { registerCaptain, loginCaptain, logoutCaptain, CaptainProfile };

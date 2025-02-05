@@ -1,89 +1,40 @@
-import React, { useEffect } from "react";
-import { IoClose } from "react-icons/io5";
-import gsap from "gsap";
+import React from "react";
 
-function ConfirmRide({ setConfirm, Pickup, DropOff, setLastConfirm, LastConfirm }) {
-  useEffect(() => {
-    // Popup animation
-    gsap.fromTo(
-      ".confirm-ride-container",
-      { scale: 0.5, opacity: 0 },
-      { scale: 1, opacity: 1, duration: 0.6, ease: "power2.out" }
-    );
-  }, []);
-
-  const handleLastConfirm = () => {
-    setConfirm(false); // Hides ConfirmRide
-    setTimeout(() => {
-      setLastConfirm(true); // Ensures SearchingDriver renders after ConfirmRide hides
-    }, 200);
-  };
-
+const ConfirmRide = ({ setConfirm, Pickup, DropOff, selectedCar }) => {
   return (
-    <div
-      className="fixed inset-0 flex items-center justify-center z-50"
-      style={{
-        backgroundColor: "rgba(0, 0, 0, 0.5)", // Overlay with transparency
-      }}
-    >
-      <div
-        className="confirm-ride-container w-[30rem] border border-gray-300 rounded-lg p-6 shadow-2xl bg-white space-y-6 relative"
-        style={{
-          minHeight: "24rem",
-        }}
-      >
-        {/* Close Button */}
-        <button
-          className="absolute top-4 right-4 text-gray-500 hover:text-black transition duration-200 focus:outline-none"
-          onClick={() => setConfirm(false)}
-          aria-label="Close"
-        >
-          <IoClose size={28} />
-        </button>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
+      <div className="bg-white p-6 rounded-lg w-[400px] shadow-lg">
+        <h2 className="text-2xl font-bold mb-4">Confirm Your Ride</h2>
 
-        {/* Heading */}
-        <div className="flex flex-col items-center space-y-6">
-          <h1 className="text-xl font-semibold text-gray-800">Confirm Ride</h1>
+        <div className="flex flex-col gap-2">
+          <p className="text-lg"><strong>Pickup:</strong> {Pickup}</p>
+          <p className="text-lg"><strong>DropOff:</strong> {DropOff}</p>
+
+          {/* Show selected car details */}
+          {selectedCar && (
+            <div className="border rounded-lg p-4 mt-2">
+              <img src={selectedCar.img} alt={selectedCar.name} className="w-full rounded-md mb-2" />
+              <h3 className="text-xl font-semibold">{selectedCar.name}</h3>
+              <p className="text-gray-600">{selectedCar.description}</p>
+              <p className="text-lg font-bold">{selectedCar.price}</p>
+            </div>
+          )}
         </div>
 
-        {/* Ride Info */}
-        <div className="space-y-6">
-          {/* Pickup Location */}
-          <div className="flex items-center space-x-4">
-            <div className="text-green-500 text-2xl">📍</div>
-            <div>
-              <h3 className="text-lg font-semibold">Pickup Location</h3>
-              <p className="text-sm text-gray-500">{Pickup}</p>
-            </div>
-          </div>
-
-          {/* Route */}
-          <div className="flex justify-center">
-            <div className="text-gray-500 text-2xl">...</div>
-          </div>
-
-          {/* Dropoff Location */}
-          <div className="flex items-center space-x-4">
-            <div className="text-red-500 text-2xl">📍</div>
-            <div>
-              <h3 className="text-lg font-semibold">Dropoff Location</h3>
-              <p className="text-sm text-gray-500">{DropOff}</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Confirm Button */}
-        <div className="flex justify-center">
+        <div className="flex justify-between mt-4">
           <button
-            onClick={handleLastConfirm}
-            className="bg-black text-white px-6 py-2 rounded-lg hover:bg-gray-800 transition duration-200"
+            onClick={() => setConfirm(false)}
+            className="bg-gray-300 px-4 py-2 rounded-lg text-gray-700"
           >
+            Cancel
+          </button>
+          <button className="bg-green-600 px-4 py-2 rounded-lg text-white">
             Confirm Ride
           </button>
         </div>
       </div>
     </div>
   );
-}
+};
 
 export default ConfirmRide;

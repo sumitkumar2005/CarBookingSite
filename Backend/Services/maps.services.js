@@ -4,7 +4,7 @@ import axios from 'axios';
 dotenv.config(); // Load the .env file
 
 // Fetch the coordinates for the given address
-export async function getCoordinate(address) {
+ async function getCoordinate(address) {
     try {
         const apiKey = process.env.MAP_API; // Load API key from environment variables
         if (!apiKey) {
@@ -30,7 +30,7 @@ export async function getCoordinate(address) {
 }
 
 // Fetch the distance and time between origin and destination
-export async function getDistanceTime(origin, destination) {
+ async function getDistanceTime(origin, destination) {
     if (!origin || !destination) {
         throw new Error("Origin and Destination are required");
     }
@@ -61,7 +61,7 @@ export async function getDistanceTime(origin, destination) {
 
 
 // Fetch suggestions for a given input
-export async function getSuggestions(input) {
+ async function getSuggestions(input) {
     try {
         const apiKey = process.env.MAP_API; // Load API key from environment variables
         if (!apiKey) {
@@ -72,7 +72,7 @@ export async function getSuggestions(input) {
             throw new Error("Input is required for fetching suggestions.");
         }
 
-        const url = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(input)}&key=${apiKey}&types=geocode`;
+        const url = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(input)}&key=AIzaSyCQFiCyNnhHEiBglJ_uBNAf3cG3p5a4njA&types=geocode`;
 
         const response = await axios.get(url);
         if (response.data.status === "OK" && response.data.predictions.length > 0) {
@@ -90,4 +90,8 @@ export async function getSuggestions(input) {
         throw new Error("Unable to fetch suggestions. Please try again later.");
     }
 }
+
+export default {getCoordinate,getSuggestions,getDistanceTime};
+
+
 

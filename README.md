@@ -1,4 +1,3 @@
-
 # API Documentation
 
 ## Endpoint: `/users/register`
@@ -305,7 +304,169 @@ The `/captains/register` endpoint allows captains to register their details, inc
 
 ---
 
-## Notes
-- The password is securely hashed before storing in the database.
-- The token is a JSON Web Token (JWT) used for authentication in subsequent requests.
-- Ensure the `Authorization` header is set with the token for protected routes.
+## New Ride API Endpoints:
+
+### Endpoint: `/rides`
+#### Description
+Returns a simple message indicating that this is the Ride API.
+
+### Responses
+#### Success Response
+- **Status Code**: 200 OK
+- **Description**: Ride API message returned successfully.
+```json
+{
+  "message": "Ride API"
+}
+```
+
+### Endpoint: `/rides/create`
+#### Description
+Creates a new ride. Requires authentication and validates the input for pickup location, drop-off location, and vehicle type.
+
+### Example Request Body
+```json
+{
+  "pickUp": "Location A",
+  "dropOff": "Location B",
+  "vehicleType": "car"
+}
+```
+
+### Responses
+#### Success Response
+- **Status Code**: 201 Created
+- **Description**: Ride created successfully.
+```json
+{
+  "message": "Ride created successfully."
+}
+```
+
+#### Error Responses
+1. **Validation Errors**
+   - **Status Code**: 400 Bad Request
+   - **Description**: The provided input data does not meet the validation criteria.
+   ```json
+   {
+     "errors": [
+       {
+         "msg": "Invalid pickup location",
+         "param": "pickUp",
+         "location": "body"
+       }
+     ]
+   }
+   ```
+
+2. **Authentication Errors**
+   - **Status Code**: 401 Unauthorized
+   - **Description**: User is not authenticated.
+   ```json
+   {
+     "message": "Unauthorized"
+   }
+   ```
+
+### Endpoint: `/rides/get-fare`
+#### Description
+Retrieves the fare for a ride. Requires authentication.
+
+### Responses
+#### Success Response
+- **Status Code**: 200 OK
+- **Description**: Fare retrieved successfully.
+```json
+{
+  "fare": 20.00
+}
+```
+
+---
+
+## New Maps API Endpoints:
+
+### Endpoint: `/maps`
+#### Description
+Returns a simple message ("hello").
+
+### Responses
+#### Success Response
+- **Status Code**: 200 OK
+- **Description**: Hello message returned successfully.
+```json
+{
+  "message": "hello"
+}
+```
+
+### Endpoint: `/maps/get-coordinates`
+#### Description
+Retrieves coordinates based on an address query parameter. Requires authentication and validation of the address.
+
+### Example Request
+```json
+{
+  "address": "123 Main St"
+}
+```
+
+### Responses
+#### Success Response
+- **Status Code**: 200 OK
+- **Description**: Coordinates retrieved successfully.
+```json
+{
+  "success": true,
+  "coordinates": {
+    "lat": 12.9716,
+    "long": 77.5946
+  }
+}
+```
+
+### Endpoint: `/maps/get-distance-time`
+#### Description
+Retrieves distance and time between origin and destination. Requires authentication and validation of both parameters.
+
+### Example Request
+```json
+{
+  "origin": "Location A",
+  "destination": "Location B"
+}
+```
+
+### Responses
+#### Success Response
+- **Status Code**: 200 OK
+- **Description**: Distance and time retrieved successfully.
+```json
+{
+  "success": true,
+  "distanceTime": {
+    "distance": "10 km",
+    "time": "15 mins"
+  }
+}
+```
+
+### Endpoint: `/maps/get-suggestions`
+#### Description
+Provides suggestions based on an input query parameter.
+
+### Example Request
+```json
+{
+  "input": "Loc"
+}
+```
+
+### Responses
+#### Success Response
+- **Status Code**: 200 OK
+- **Description**: Suggestions retrieved successfully.
+```json
+{
+  "suggestions": ["Location A", "Location B"]
+}

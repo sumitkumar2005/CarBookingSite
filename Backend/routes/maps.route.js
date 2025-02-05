@@ -78,11 +78,30 @@ router.get(
             });
         }
     }
-);
-router.get('/get-suggestions', query('input')
-.isString()
-.withMessage('input must be a string.')
-.notEmpty()
-.withMessage('input is required.'),getSuggestionsController)
+)
+router.get(
+    '/get-suggestions',
+    [
+      query('input')
+        .isString()
+        .withMessage('Input must be a string.')
+        .notEmpty()
+        .withMessage('Input is required.')
+    ],
+    async (req, res) => {
+      
+  
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        console.log("Validation errors:", errors.array());
+        return res.status(400).json({ errors: errors.array() });
+      }
+  
+      // Instead of destructuring input and passing it, pass the entire req and res.
+      await getSuggestionsController(req, res);
+    }
+  );
+  
+
 
 export default router;
