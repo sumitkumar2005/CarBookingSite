@@ -102,6 +102,21 @@ router.get(
     }
   );
   
+ 
+  
+  const apiKey = process.env.MAP_API;
+  
+  router.get("/get-location", async (req, res) => {
+      try {
+          const response = await axios.post(`https://www.googleapis.com/geolocation/v1/geolocate?key=${apiKey}`);
+          res.json(response.data);
+      } catch (error) {
+          res.status(500).json({ error: "Failed to get location" });
+      }
+  });
+  
+
+  
 
 
 export default router;

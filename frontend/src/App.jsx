@@ -12,6 +12,7 @@ import Navbar from './Components/Navbar';
 import CaptainProctectWrapper from './Pages/CaptainProtectWrapper';
 import WaitingDriver from './Components/WaitingForDriver';
 import CaptainHome from './Pages/CaptainHome';
+
 function App() {
   return (
     <div>

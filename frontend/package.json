@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",
+    "@react-google-maps/api": "^2.20.5",
     "gsap": "^3.12.7",
     "lucide-react": "^0.469.0",
     "react": "^18.3.1",
