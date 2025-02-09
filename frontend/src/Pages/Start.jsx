@@ -17,9 +17,10 @@ function Start() {
   const [showCar, setShowCar] = useState(false);
   const [confirm, setConfirm] = useState(false);
   const [price, setPrice] = useState(null);
+  const [rides, setRides] = useState([]); // Array to hold ride options
   const [lastConfirm, setLastConfirm] = useState(false);
 
-  // Ref for debouncing the API calls
+  // Ref for debouncing API calls
   const debounceTimer = useRef(null);
 
   // Animate the map container on mount using GSAP
@@ -27,15 +28,31 @@ function Start() {
     gsap.from(".map-container", { opacity: 0, duration: 2, y: -50 });
   }, []);
 
-  // Fetch price from backend when both pickup and dropoff are set
+  // Fetch fare (price) from backend when both pickup and dropoff are set
   useEffect(() => {
     const fetchPrice = async () => {
       if (!pickup || !dropoff) return;
       try {
-        const response = await axios.get("http://localhost:5000/maps/get-fare", {
+        // Get the token (assumes you stored it in localStorage after login)
+        const token = localStorage.getItem("token");
+
+        const response = await axios.get("http://localhost:5000/rides/get-fare", {
           params: { pickUp: pickup, dropOff: dropoff },
+          headers: {
+            // If token exists, send it in the Authorization header
+            Authorization: token ? `Bearer ${token}` : "",
+          },
         });
-        setPrice(response.data); // Adjust based on your API response
+        console.log("Fare Response:", response.data);
+        setPrice(response.data); // Save the raw price object if needed
+
+        // Transform the price object into an array of ride objects
+        const ridesArray = Object.keys(response.data).map((vehicleType) => ({
+          id: vehicleType,
+          name: vehicleType.charAt(0).toUpperCase() + vehicleType.slice(1), // e.g., "Auto", "Bike", "Car"
+          price: response.data[vehicleType],
+        }));
+        setRides(ridesArray);
       } catch (error) {
         console.error("Error fetching fare:", error);
       }
@@ -47,7 +64,6 @@ function Start() {
   // Fetch location suggestions from backend
   const fetchSuggestions = async (query, type) => {
     if (!query.trim()) {
-      // Clear suggestions if the input is empty
       if (type === "pickup") {
         setPickupSuggestions([]);
       } else {
@@ -60,11 +76,7 @@ function Start() {
       const response = await axios.get("http://localhost:5000/maps/get-suggestions", {
         params: { input: query },
       });
-
-      // Log the response for debugging purposes
       console.log("Response from suggestions API:", response.data);
-
-      // Assuming the API returns an object like: { success: true, suggestions: [ ... ] }
       const suggestions = response.data.suggestions || [];
 
       if (type === "pickup") {
@@ -81,13 +93,13 @@ function Start() {
   const handleInputChange = (value, type) => {
     if (type === "pickup") {
       setPickup(value);
+      console.log("pickup: " + value);
       setShowPickupDropdown(true);
     } else {
       setDropoff(value);
       setShowDropoffDropdown(true);
     }
 
-    // Clear any existing timer before setting a new one
     if (debounceTimer.current) {
       clearTimeout(debounceTimer.current);
     }
@@ -96,7 +108,7 @@ function Start() {
     }, 300);
   };
 
-  // Handle selection from the suggestion dropdown
+  // Handle selection from the suggestions dropdown
   const handleSelectLocation = (locationDescription, type) => {
     if (type === "pickup") {
       setPickup(locationDescription);
@@ -197,13 +209,15 @@ function Start() {
             )}
             <CarInfo
               selectedRide={selectedRide}
-              price={price} // Pass fetched price
+              rides={rides} // Pass the rides array to CarInfo
+              price={price} // Pass raw price if needed
               setPrice={setPrice}
               showCar={showCar}
               setshowCar={setShowCar}
               DropOff={dropoff}
               Pickup={pickup}
               setConfirm={setConfirm}
+              setSelectedRide={setSelectedRide}
             />
             <img src={Image} alt="Map" className="w-full h-full object-cover rounded-lg" />
           </div>

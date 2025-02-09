@@ -16,8 +16,8 @@ export async function getCoordinates(address) {
 
 export async function getDistanceAndTime(req, res) {
   try {
-    const { origin, destination } = req.query;
-    const distanceTime = await mapsServices.getDistanceTime(origin, destination);
+    const { pickUp, dropOff } = req.query;
+    const distanceTime = await mapsServices.getDistanceTime(pickUp, dropOff);
     res.json(distanceTime);
   } catch (error) {
     console.error("Error fetching distance and time:", error.message);
