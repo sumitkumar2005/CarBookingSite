@@ -28,37 +28,42 @@ function Start() {
     gsap.from(".map-container", { opacity: 0, duration: 2, y: -50 });
   }, []);
 
-  // Fetch fare (price) from backend when both pickup and dropoff are set
+  // Modified fetchPrice function
   useEffect(() => {
     const fetchPrice = async () => {
-      if (!pickup || !dropoff) return;
-      try {
-        // Get the token (assumes you stored it in localStorage after login)
-        const token = localStorage.getItem("token");
+      if (!pickup || !dropoff) {
+        setPrice(null);
+        return;
+      }
 
+      try {
+        const token = localStorage.getItem("token");
         const response = await axios.get("http://localhost:5000/rides/get-fare", {
           params: { pickUp: pickup, dropOff: dropoff },
           headers: {
-            // If token exists, send it in the Authorization header
             Authorization: token ? `Bearer ${token}` : "",
           },
         });
-        console.log("Fare Response:", response.data);
-        setPrice(response.data); // Save the raw price object if needed
 
-        // Transform the price object into an array of ride objects
-        const ridesArray = Object.keys(response.data).map((vehicleType) => ({
-          id: vehicleType,
-          name: vehicleType.charAt(0).toUpperCase() + vehicleType.slice(1), // e.g., "Auto", "Bike", "Car"
-          price: response.data[vehicleType],
-        }));
-        setRides(ridesArray);
+        console.log("Fare Response:", response.data);
+        
+        // Ensure the response data has the expected structure
+        if (response.data && typeof response.data === 'object') {
+          setPrice(response.data);
+        } else {
+          console.error("Invalid price data received:", response.data);
+          setPrice(null);
+        }
       } catch (error) {
         console.error("Error fetching fare:", error);
+        setPrice(null);
       }
     };
 
-    fetchPrice();
+    // Only fetch price if both pickup and dropoff are set
+    if (pickup && dropoff) {
+      fetchPrice();
+    }
   }, [pickup, dropoff]);
 
   // Fetch location suggestions from backend

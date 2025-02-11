@@ -1,8 +1,8 @@
-import React, { useRef, useEffect, useState, useMemo } from "react";
-import ConfirmRide from "../Components/ConfirmRide"; // Import ConfirmRide directly
+import React, { useRef, useEffect, useState } from "react";
+import ConfirmRide from "../Components/ConfirmRide";
 
 const CarInfo = ({
-  price,            // Price object (if needed)
+  price,
   setPrice,
   selectedRide,
   setSelectedRide,
@@ -10,31 +10,44 @@ const CarInfo = ({
   setshowCar,
   DropOff,
   Pickup,
-  rides,           // Array of ride options passed from Start
   setConfirm,
 }) => {
   const carInfoRef = useRef(null);
   const [selectedCarDetails, setSelectedCarDetails] = useState(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
 
-  // Generate a random ETA (in minutes) for each ride once when rides update.
-  // This creates a new array with an additional "eta" property.
-  const ridesWithETA = useMemo(() => {
-    if (!rides) return [];
-    return rides.map((ride) => ({
-      ...ride,
-      eta: Math.floor(Math.random() * 8) + 3, // ETA between 3 and 10 mins
-    }));
-  }, [rides]);
+  // Fixed ETAs for demonstration purposes
+  const carETA = 2;
+  const bikeETA = 3;
+  const autoETA = 4;
 
-  // Close CarInfo if click occurs outside the component
+  // Handle selecting a ride option
+  const handleOptionClick = (rideType) => {
+    setSelectedRide(rideType);
+  };
+
+  // Confirm the selected ride
+  const handleConfirmationClick = () => {
+    let selectedCar = null;
+    if (selectedRide === "car") {
+      selectedCar = { id: "car", name: "Car", eta: carETA, price: price?.car };
+    } else if (selectedRide === "bike") {
+      selectedCar = { id: "bike", name: "Bike", eta: bikeETA, price: price?.bike };
+    } else if (selectedRide === "auto") {
+      selectedCar = { id: "auto", name: "Auto", eta: autoETA, price: price?.auto };
+    }
+    if (selectedCar) {
+      setSelectedCarDetails(selectedCar);
+      setPrice(selectedCar.price);
+      setShowConfirmModal(true);
+      setshowCar(false);
+    }
+  };
+
+  // Close CarInfo if a click occurs outside the component
   useEffect(() => {
     const handleOutsideClick = (event) => {
-      if (
-        carInfoRef.current &&
-        !carInfoRef.current.contains(event.target) &&
-        showCar
-      ) {
+      if (carInfoRef.current && !carInfoRef.current.contains(event.target) && showCar) {
         setshowCar(false);
       }
     };
@@ -45,61 +58,94 @@ const CarInfo = ({
     };
   }, [showCar, setshowCar]);
 
-  // When confirming, set the selected ride and update the price
-  const handleConfirmationClick = () => {
-    const selectedCar = ridesWithETA?.find((ride) => ride.id === selectedRide);
-    if (selectedCar) {
-      setSelectedCarDetails(selectedCar);
-      setPrice(selectedCar.price);
-      setShowConfirmModal(true);
-      setshowCar(false);
-    }
-  };
-
   return (
-    <div>
+    <div className="">
       <div
         ref={carInfoRef}
-        className={`absolute top-0 left-1/2 transform -translate-x-1/2 ${
+        className={`absolute top-0 left-1/3 transform -translate-x-1/2 ${
           showCar
             ? "opacity-100 translate-y-0 scale-100"
             : "opacity-0 -translate-y-10 scale-95"
-        } bg-white rounded-2xl w-[32rem] max-w-full h-auto p-8 flex flex-col gap-6 shadow-2xl transition-all duration-500 ease-out overflow-y-auto`}
+        } bg-white text-black border border-black rounded-2xl w-[32rem] max-w-full h-auto p-8 flex flex-col gap-6 shadow-2xl transition-all duration-500 ease-out overflow-y-auto`}
       >
-        <h1 className="text-3xl font-bold text-gray-800 text-center">
-          Choose a Ride
-        </h1>
-        <p className="text-lg text-gray-600 text-center">Recommended for you</p>
+        <h1 className="text-3xl font-bold text-center">Choose a Ride</h1>
+        <p className="text-lg text-center">Recommended for you</p>
 
-        {/* Render available rides */}
         <div className="space-y-4">
-          {ridesWithETA && ridesWithETA.length > 0 ? (
-            ridesWithETA.map((ride) => (
-              <div
-                key={ride.id}
-                onClick={() => setSelectedRide(ride.id)}
-                className={`cursor-pointer p-4 rounded-xl border transition transform hover:scale-105 hover:shadow-lg ${
-                  selectedRide === ride.id
-                    ? "border-blue-500 bg-blue-50"
-                    : "border-gray-300"
-                }`}
-              >
-                <div className="flex justify-between items-center">
-                  <div>
-                    <h2 className="text-xl font-semibold text-gray-800">
-                      {ride.name}
-                    </h2>
-                    <p className="text-sm text-gray-500">ETA {ride.eta} mins</p>
-                  </div>
-                  <div className="text-lg font-bold text-gray-800">
-                    ₹{ride.price}
-                  </div>
-                </div>
+          {/* Car Option */}
+          <div
+            onClick={() => handleOptionClick("car")}
+            className={`cursor-pointer p-4 rounded-xl border transition transform hover:scale-105 hover:shadow-lg ${
+              selectedRide === "car"
+                ? "border-black bg-gray-200"
+                : "border-gray-400 bg-white"
+            }`}
+          >
+            <div className="flex items-center">
+              <img
+                src="https://th.bing.com/th/id/OIP.90_IXyFPb47LZ_AYAe1ylAHaEK?w=301&h=180&c=7&r=0&o=5&dpr=1.3&pid=1.7"
+                alt="Car"
+                className="w-16 h-16 object-cover mr-4 filter grayscale"
+              />
+              <div>
+                <h2 className="text-xl font-semibold">Car</h2>
+                <p className="text-sm">ETA: {carETA} mins away</p>
               </div>
-            ))
-          ) : (
-            <p className="text-center text-gray-500">No rides available</p>
-          )}
+              <div className="ml-auto text-lg font-bold">
+                ₹{price?.car ? Math.round(price.car) : "N/A"}
+              </div>
+            </div>
+          </div>
+
+          {/* Bike Option */}
+          <div
+            onClick={() => handleOptionClick("bike")}
+            className={`cursor-pointer p-4 rounded-xl border transition transform hover:scale-105 hover:shadow-lg ${
+              selectedRide === "bike"
+                ? "border-black bg-gray-200"
+                : "border-gray-400 bg-white"
+            }`}
+          >
+            <div className="flex items-center">
+              <img
+                src="https://cdn-icons-png.flaticon.com/512/8636/8636881.png"
+                alt="Bike"
+                className="w-16 h-16 object-cover mr-4 filter grayscale"
+              />
+              <div>
+                <h2 className="text-xl font-semibold">Bike</h2>
+                <p className="text-sm">ETA: {bikeETA} mins away</p>
+              </div>
+              <div className="ml-auto text-lg font-bold">
+                ₹{price?.bike ? Math.round(price.bike) : "N/A"}
+              </div>
+            </div>
+          </div>
+
+          {/* Auto Option */}
+          <div
+            onClick={() => handleOptionClick("auto")}
+            className={`cursor-pointer p-4 rounded-xl border transition transform hover:scale-105 hover:shadow-lg ${
+              selectedRide === "auto"
+                ? "border-black bg-gray-200"
+                : "border-gray-400 bg-white"
+            }`}
+          >
+            <div className="flex items-center">
+              <img
+                src="https://th.bing.com/th/id/OIP.gERohywpalGF3NjolmHt5wHaE7?rs=1&pid=ImgDetMain"
+                alt="Auto"
+                className="w-16 h-16 object-cover mr-4 filter grayscale"
+              />
+              <div>
+                <h2 className="text-xl font-semibold">Auto</h2>
+                <p className="text-sm">ETA: {autoETA} mins away</p>
+              </div>
+              <div className="ml-auto text-lg font-bold">
+                ₹{price?.auto ? Math.round(price.auto) : "N/A"}
+              </div>
+            </div>
+          </div>
         </div>
 
         <button
@@ -107,7 +153,7 @@ const CarInfo = ({
           disabled={!selectedRide}
           className={`w-full py-4 text-xl font-semibold rounded-xl transition duration-200 ${
             selectedRide
-              ? "bg-blue-600 text-white hover:bg-blue-700"
+              ? "bg-black text-white hover:bg-gray-800"
               : "bg-gray-300 text-gray-500 cursor-not-allowed"
           }`}
         >
@@ -115,7 +161,7 @@ const CarInfo = ({
         </button>
       </div>
 
-      {/* Conditionally render the ConfirmRide component */}
+      {/* Conditionally render the ConfirmRide modal */}
       {showConfirmModal && selectedCarDetails && (
         <ConfirmRide
           setConfirm={setShowConfirmModal}
