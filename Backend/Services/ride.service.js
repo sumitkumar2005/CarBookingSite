@@ -51,10 +51,17 @@ async function createRide({ user, pickUp, dropOff, vehicleType }) {
         throw new Error("All fields are required");
     }
 
-    const fare = await getFare(pickUp, dropOff, vehicleType);
-    const otp = await getOtp(); // Generate OTP
+    // Get fare details for all vehicle types
+    const fareDetails = await getFare(pickUp, dropOff);
+    
+    // Extract the specific fare for the selected vehicle type
+    const fare = fareDetails[vehicleType];
+    
+    if (!fare || typeof fare !== 'number') {
+        throw new Error("Invalid fare calculation");
+    }
 
-    // Hash the OTP before storing it in the database
+    const otp = await getOtp(); // Generate OTP
     const hashedOtp = await bcrypt.hash(otp, 10);
 
     const ride = await rideModel.create({
@@ -62,8 +69,8 @@ async function createRide({ user, pickUp, dropOff, vehicleType }) {
         pickUp,
         dropOff,
         vehicleType,
-        fare,
-        otp: hashedOtp, // Store hashed OTP in DB
+        fare: Math.round(fare), // Use the specific fare for the selected vehicle type
+        otp: hashedOtp,
     });
 
     console.log("Your OTP:", otp); // Send OTP to user via SMS/Email

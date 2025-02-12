@@ -19,8 +19,14 @@ const ConfirmRide = ({ setConfirm, Pickup, DropOff, selectedCar, price }) => {
             <span className="text-lg text-gray-800">{DropOff}</span>
           </div>
           <div className="flex justify-between items-center">
+            <span className="text-lg font-medium text-gray-600">Vehicle Type:</span>
+            <span className="text-lg text-gray-800 capitalize">{selectedCar?.id || "N/A"}</span>
+          </div>
+          <div className="flex justify-between items-center">
             <span className="text-lg font-medium text-gray-600">Fare:</span>
-            <span className="text-lg text-gray-800">₹{price}</span>
+            <span className="text-lg font-bold text-gray-800">
+              ₹{price ? Math.round(price).toLocaleString() : "N/A"}
+            </span>
           </div>
         </div>
 
@@ -51,16 +57,21 @@ const ConfirmRide = ({ setConfirm, Pickup, DropOff, selectedCar, price }) => {
           </div>
         )}
 
-        {/* Action Buttons */}
-        <div className="flex justify-between mt-8">
+        {/* Buttons */}
+        <div className="mt-8 flex space-x-4">
           <button
             onClick={() => setConfirm(false)}
-            className="w-1/2 mr-2 py-3 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold rounded-lg transition duration-200"
+            className="flex-1 py-3 px-6 bg-gray-200 text-gray-800 rounded-xl hover:bg-gray-300 transition-colors"
           >
             Cancel
           </button>
-          <button className="w-1/2 ml-2 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition duration-200">
-            Confirm Ride
+          <button
+            onClick={() => {
+              setConfirm(false);
+            }}
+            className="flex-1 py-3 px-6 bg-black text-white rounded-xl hover:bg-gray-800 transition-colors"
+          >
+            Confirm
           </button>
         </div>
       </div>

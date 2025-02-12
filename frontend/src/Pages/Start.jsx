@@ -19,6 +19,7 @@ function Start() {
   const [price, setPrice] = useState(null);
   const [rides, setRides] = useState([]); // Array to hold ride options
   const [lastConfirm, setLastConfirm] = useState(false);
+  const [selectedCarDetails, setSelectedCarDetails] = useState(null);
 
   // Ref for debouncing API calls
   const debounceTimer = useRef(null);
@@ -78,19 +79,33 @@ function Start() {
     }
 
     try {
+      const token = localStorage.getItem("token");
       const response = await axios.get("http://localhost:5000/maps/get-suggestions", {
         params: { input: query },
+        headers: {
+          Authorization: token ? `Bearer ${token}` : "",
+        }
       });
-      console.log("Response from suggestions API:", response.data);
+      
+      console.log("Raw API Response:", response);
       const suggestions = response.data.suggestions || [];
+      console.log("Processed suggestions:", suggestions);
 
       if (type === "pickup") {
         setPickupSuggestions(suggestions);
+        setShowPickupDropdown(true);
       } else {
         setDropoffSuggestions(suggestions);
+        setShowDropoffDropdown(true);
       }
     } catch (error) {
-      console.error("Error fetching suggestions:", error);
+      console.error("Error fetching suggestions:", error.response || error);
+      // Clear suggestions on error
+      if (type === "pickup") {
+        setPickupSuggestions([]);
+      } else {
+        setDropoffSuggestions([]);
+      }
     }
   };
 
@@ -98,19 +113,31 @@ function Start() {
   const handleInputChange = (value, type) => {
     if (type === "pickup") {
       setPickup(value);
-      console.log("pickup: " + value);
       setShowPickupDropdown(true);
     } else {
       setDropoff(value);
       setShowDropoffDropdown(true);
     }
 
+    // Clear existing timer
     if (debounceTimer.current) {
       clearTimeout(debounceTimer.current);
     }
-    debounceTimer.current = setTimeout(() => {
-      fetchSuggestions(value, type);
-    }, 300);
+
+    // Only fetch if value length is greater than 2
+    if (value.length > 2) {
+      debounceTimer.current = setTimeout(() => {
+        console.log(`Fetching suggestions for: ${value}`);
+        fetchSuggestions(value, type);
+      }, 300);
+    } else {
+      // Clear suggestions for short inputs
+      if (type === "pickup") {
+        setPickupSuggestions([]);
+      } else {
+        setDropoffSuggestions([]);
+      }
+    }
   };
 
   // Handle selection from the suggestions dropdown
@@ -126,8 +153,17 @@ function Start() {
 
   return (
     <div className="relative z-0">
-      {confirm && <ConfirmRide setConfirm={setConfirm} Pickup={pickup} DropOff={dropoff} />}
+      {confirm && (
+        <ConfirmRide 
+          setConfirm={setConfirm} 
+          Pickup={pickup} 
+          DropOff={dropoff} 
+          selectedCar={selectedCarDetails}
+          price={price && selectedRide ? price[selectedRide] : null}
+        />
+      )}
       {lastConfirm && <SearchingDriver setC={setLastConfirm} />}
+      
       <div className="min-h-screen bg-white flex flex-col">
         <div className="flex flex-col lg:flex-row justify-between items-start px-8 py-16">
           <div className="max-w-lg w-full space-y-8">
@@ -144,22 +180,18 @@ function Start() {
                   className="w-full sm:w-72 bg-gray-200 px-8 py-4 text-lg rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   onChange={(e) => handleInputChange(e.target.value, "pickup")}
                 />
-                {showPickupDropdown && (
-                  <ul className="absolute z-10 w-full bg-white border rounded-md mt-2 shadow-lg max-h-64 overflow-y-auto">
-                    {pickupSuggestions.length > 0 ? (
-                      pickupSuggestions.map((option, index) => (
-                        <li
-                          key={option.placeId || index}
-                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
-                          onClick={() => handleSelectLocation(option.description, "pickup")}
-                        >
-                          {option.description}
-                        </li>
-                      ))
-                    ) : (
-                      <li className="px-4 py-2 text-gray-500">No suggestions found</li>
-                    )}
-                  </ul>
+                {showPickupDropdown && pickupSuggestions.length > 0 && (
+                  <div className="absolute z-10 w-full bg-white border rounded-lg shadow-lg mt-1">
+                    {pickupSuggestions.map((suggestion, index) => (
+                      <div
+                        key={index}
+                        className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                        onClick={() => handleSelectLocation(suggestion.description, "pickup")}
+                      >
+                        {suggestion.description}
+                      </div>
+                    ))}
+                  </div>
                 )}
               </div>
 
@@ -172,22 +204,18 @@ function Start() {
                   className="w-full sm:w-72 bg-gray-200 px-8 py-4 text-lg rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   onChange={(e) => handleInputChange(e.target.value, "dropoff")}
                 />
-                {showDropoffDropdown && (
-                  <ul className="absolute z-10 w-full bg-white border rounded-md mt-2 shadow-lg max-h-64 overflow-y-auto">
-                    {dropoffSuggestions.length > 0 ? (
-                      dropoffSuggestions.map((option, index) => (
-                        <li
-                          key={option.placeId || index}
-                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
-                          onClick={() => handleSelectLocation(option.description, "dropoff")}
-                        >
-                          {option.description}
-                        </li>
-                      ))
-                    ) : (
-                      <li className="px-4 py-2 text-gray-500">No suggestions found</li>
-                    )}
-                  </ul>
+                {showDropoffDropdown && dropoffSuggestions.length > 0 && (
+                  <div className="absolute z-10 w-full bg-white border rounded-lg shadow-lg mt-1">
+                    {dropoffSuggestions.map((suggestion, index) => (
+                      <div
+                        key={index}
+                        className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                        onClick={() => handleSelectLocation(suggestion.description, "dropoff")}
+                      >
+                        {suggestion.description}
+                      </div>
+                    ))}
+                  </div>
                 )}
               </div>
             </div>
@@ -201,33 +229,26 @@ function Start() {
             </button>
           </div>
 
-          {/* Car Info Section */}
           <div className="relative w-full h-[40rem] lg:h-auto">
-            {confirm && (
-              <ConfirmRide
-                setConfirm={setConfirm}
-                Pickup={pickup}
-                DropOff={dropoff}
-                setLastConfirm={setLastConfirm}
-                LastConfirm={lastConfirm}
-              />
-            )}
-            <CarInfo
-              selectedRide={selectedRide}
-              rides={rides} // Pass the rides array to CarInfo
-              price={price} // Pass raw price if needed
-              setPrice={setPrice}
-              showCar={showCar}
-              setshowCar={setShowCar}
-              DropOff={dropoff}
-              Pickup={pickup}
-              setConfirm={setConfirm}
-              setSelectedRide={setSelectedRide}
-            />
             <img src={Image} alt="Map" className="w-full h-full object-cover rounded-lg" />
           </div>
         </div>
       </div>
+
+      {showCar && (
+        <CarInfo
+          selectedRide={selectedRide}
+          price={price}
+          setPrice={setPrice}
+          showCar={showCar}
+          setshowCar={setShowCar}
+          DropOff={dropoff}
+          Pickup={pickup}
+          setConfirm={setConfirm}
+          setSelectedRide={setSelectedRide}
+          setSelectedCarDetails={setSelectedCarDetails}
+        />
+      )}
     </div>
   );
 }
