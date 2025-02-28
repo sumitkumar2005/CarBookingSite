@@ -5,43 +5,52 @@ import Blacklist from "../models/blackList.model.js";
 import captainModel from "../models/captain.model.js";
 dotenv.config();
 
-async function authUser(req, res, next) {
+const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-2024";
+
+const authUser = async (req, res, next) => {
     try {
         const authHeader = req.headers.authorization;
-        const token = req.headers.authorization.split(' ')[1] || req.cookies.token;
-
-        console.log(token);
-        const isBlackListed = await Blacklist.findOne({ token: token }); // Await the blacklist check
-        if (isBlackListed) {
-            return res.status(400).json({ message: "Unauthorized access" });
+        
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            return res.status(401).json({ message: "Invalid authorization header" });
         }
 
-        // Verify token
-        const decoded = jwt.verify(token, "HELLO_THERE");
+        const token = authHeader.split(' ')[1];
+        
+        if (!token) {
+            return res.status(401).json({ message: "No token provided" });
+        }
 
-        // Find user by ID
+        // Use the same JWT_SECRET here
+        const decoded = jwt.verify(token, JWT_SECRET);
         const user = await userModel.findById(decoded._id);
+
+        if (!user) {
+            return res.status(401).json({ message: "User not found" });
+        }
+
         req.user = user;
         next();
     } catch (error) {
-        return res.status(401).json({ message: error.message });
+        console.error("Auth Error:", error);
+        return res.status(401).json({ message: "Authentication failed" });
     }
-}
+};
 
 async function authCaptain(req, res, next) {
     try {
         const authHeader = req.headers.authorization;
-        if (!authHeader) {
-            return res.status(401).json({ message: "Unauthorized: No token provided" });
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            return res.status(401).json({ message: "Invalid authorization header" });
         }
 
-        const token = authHeader.split(' ')[1] || req.cookies.token;
+        const token = authHeader.split(' ')[1];
         if (!token) {
-            return res.status(401).json({ message: "Unauthorized: No token provided" });
+            return res.status(401).json({ message: "No token provided" });
         }
-        console.log(token);
-        // Decode the token
-        const decoded = jwt.verify(token, "YOUR_CAPTAIN");
+
+        // Use the same JWT_SECRET for consistency
+        const decoded = jwt.verify(token, JWT_SECRET);
         const captain = await captainModel.findById(decoded._id);
 
         if (!captain) {
@@ -55,4 +64,5 @@ async function authCaptain(req, res, next) {
     }
 }
 
+export { authUser };
 export default { authUser, authCaptain };

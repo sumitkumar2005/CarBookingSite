@@ -4,7 +4,7 @@ import { BsThreeDotsVertical } from "react-icons/bs";
 import { IoClose } from "react-icons/io5"; // Importing the close icon
 import gsap from "gsap";
 
-function WaitingDriver() {
+function WaitingDriver({ onClose }) {
   // State to control whether the modal is visible or hidden
   const [isVisible, setIsVisible] = useState(true);
 
@@ -26,11 +26,12 @@ function WaitingDriver() {
   // Close the modal after 10 seconds
   useEffect(() => {
     const timer = setTimeout(() => {
-      setIsVisible(false); // Close the modal after 10 seconds
-    }, 10000); // 10 seconds
+      setIsVisible(false);
+      if (onClose) onClose();
+    }, 10000);
 
-    return () => clearTimeout(timer); // Cleanup timer on unmount
-  }, []);
+    return () => clearTimeout(timer);
+  }, [onClose]);
 
   return (
     <div

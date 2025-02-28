@@ -2,6 +2,8 @@ import mongoose from 'mongoose';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 
+const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-2024";
+
 const userSchema = new mongoose.Schema({
     fullname: {
         firstname: {
@@ -27,19 +29,20 @@ const userSchema = new mongoose.Schema({
         minlength: [6, 'Password must be at least 6 characters long'],
         select: false,
     },
-    soketId:{
-        type:String
+    socketId: {
+        type: String,
+        default: null,
+        index: true
     }
-
-
 });
 
 
 // Methods for the schema
 userSchema.methods.generateAuthToken = function () {
     const token = jwt.sign(
-        { _id: this._id, email: this.email },
-        "HELLO_THERE",{expiresIn: '1h'}
+        { _id: this._id },
+        JWT_SECRET,
+        { expiresIn: '24h' }
     );
    
     return token;

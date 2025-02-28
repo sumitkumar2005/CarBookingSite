@@ -1,12 +1,17 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useContext } from "react";
 import axios from "axios";
 import gsap from "gsap";
 import Image from "./../assets/image.png"; // Verify this path
 import CarInfo from "../Components/CarInfo.jsx"; // Verify this path
 import ConfirmRide from "../Components/ConfirmRide.jsx"; // Verify this path
 import SearchingDriver from "../Components/SearchingDriver.jsx"; // Verify this path
+import { UserDataContext } from "../Context/UserContext.jsx";
+import { useSocket } from "../Context/SocketContext"; // Changed to useSocket hook
 
 function Start() {
+  const { emitEvent, connected } = useSocket(); // Add connected status
+  const { userData } = useContext(UserDataContext); // Changed from user to userData to match context
+
   const [pickup, setPickup] = useState("");
   const [dropoff, setDropoff] = useState("");
   const [showPickupDropdown, setShowPickupDropdown] = useState(false);
@@ -24,12 +29,27 @@ function Start() {
   // Ref for debouncing API calls
   const debounceTimer = useRef(null);
 
+  // Join socket room when component mounts or when socket connects
+  useEffect(() => {
+    if (connected && userData?._id) {
+      console.log('Attempting to join socket room...', {
+        userId: userData._id,
+        type: 'user'
+      });
+      
+      emitEvent('join', {
+        userId: userData._id,
+        type: 'user'
+      });
+    }
+  }, [connected, userData, emitEvent]); // Add connected to dependencies
+
   // Animate the map container on mount using GSAP
   useEffect(() => {
     gsap.from(".map-container", { opacity: 0, duration: 2, y: -50 });
   }, []);
 
-  // Modified fetchPrice function
+  // Fetch price when pickup or dropoff changes
   useEffect(() => {
     const fetchPrice = async () => {
       if (!pickup || !dropoff) {
@@ -39,16 +59,16 @@ function Start() {
 
       try {
         const token = localStorage.getItem("token");
-        const response = await axios.get("http://localhost:5000/rides/get-fare", {
-          params: { pickUp: pickup, dropOff: dropoff },
-          headers: {
-            Authorization: token ? `Bearer ${token}` : "",
-          },
-        });
+        const response = await axios.get(
+          `${import.meta.env.VITE_BASE_URL}/rides/get-fare`,
+          {
+            params: { pickUp: pickup, dropOff: dropoff },
+            headers: {
+              Authorization: `Bearer ${token}`
+            },
+          }
+        );
 
-        console.log("Fare Response:", response.data);
-        
-        // Ensure the response data has the expected structure
         if (response.data && typeof response.data === 'object') {
           setPrice(response.data);
         } else {
@@ -61,35 +81,31 @@ function Start() {
       }
     };
 
-    // Only fetch price if both pickup and dropoff are set
     if (pickup && dropoff) {
       fetchPrice();
     }
   }, [pickup, dropoff]);
 
-  // Fetch location suggestions from backend
+  // Fetch location suggestions
   const fetchSuggestions = async (query, type) => {
     if (!query.trim()) {
-      if (type === "pickup") {
-        setPickupSuggestions([]);
-      } else {
-        setDropoffSuggestions([]);
-      }
+      type === "pickup" ? setPickupSuggestions([]) : setDropoffSuggestions([]);
       return;
     }
 
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.get("http://localhost:5000/maps/get-suggestions", {
-        params: { input: query },
-        headers: {
-          Authorization: token ? `Bearer ${token}` : "",
+      const response = await axios.get(
+        `${import.meta.env.VITE_BASE_URL}/maps/get-suggestions`,
+        {
+          params: { input: query },
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
         }
-      });
-      
-      console.log("Raw API Response:", response);
+      );
+
       const suggestions = response.data.suggestions || [];
-      console.log("Processed suggestions:", suggestions);
 
       if (type === "pickup") {
         setPickupSuggestions(suggestions);
@@ -99,17 +115,12 @@ function Start() {
         setShowDropoffDropdown(true);
       }
     } catch (error) {
-      console.error("Error fetching suggestions:", error.response || error);
-      // Clear suggestions on error
-      if (type === "pickup") {
-        setPickupSuggestions([]);
-      } else {
-        setDropoffSuggestions([]);
-      }
+      console.error("Error fetching suggestions:", error);
+      type === "pickup" ? setPickupSuggestions([]) : setDropoffSuggestions([]);
     }
   };
 
-  // Handle input changes with a debounce of 300ms
+  // Handle input changes with debounce
   const handleInputChange = (value, type) => {
     if (type === "pickup") {
       setPickup(value);
@@ -119,28 +130,20 @@ function Start() {
       setShowDropoffDropdown(true);
     }
 
-    // Clear existing timer
     if (debounceTimer.current) {
       clearTimeout(debounceTimer.current);
     }
 
-    // Only fetch if value length is greater than 2
     if (value.length > 2) {
       debounceTimer.current = setTimeout(() => {
-        console.log(`Fetching suggestions for: ${value}`);
         fetchSuggestions(value, type);
       }, 300);
     } else {
-      // Clear suggestions for short inputs
-      if (type === "pickup") {
-        setPickupSuggestions([]);
-      } else {
-        setDropoffSuggestions([]);
-      }
+      type === "pickup" ? setPickupSuggestions([]) : setDropoffSuggestions([]);
     }
   };
 
-  // Handle selection from the suggestions dropdown
+  // Handle location selection
   const handleSelectLocation = (locationDescription, type) => {
     if (type === "pickup") {
       setPickup(locationDescription);
@@ -160,9 +163,11 @@ function Start() {
           DropOff={dropoff} 
           selectedCar={selectedCarDetails}
           price={price && selectedRide ? price[selectedRide] : null}
+          setLastConfirm={setLastConfirm} // Added missing prop
         />
       )}
-      {lastConfirm && <SearchingDriver setC={setLastConfirm} />}
+      
+      {lastConfirm && <SearchingDriver setC={setLastConfirm} pickup={pickup} />}
       
       <div className="min-h-screen bg-white flex flex-col">
         <div className="flex flex-col lg:flex-row justify-between items-start px-8 py-16">

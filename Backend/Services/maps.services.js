@@ -1,5 +1,6 @@
 import dotenv from "dotenv";
 import axios from "axios";
+import Captain from '../models/captain.model.js'; // Import the Captain model
 
 dotenv.config(); // Load the .env file
 
@@ -19,8 +20,8 @@ async function getCoordinate(address) {
     if (response.data.status === "OK" && response.data.results.length > 0) {
       const location = response.data.results[0].geometry.location;
       return {
-        latitude: location.lat,
-        longitude: location.lng,
+        lat: location.lat,
+        long: location.lng,
       };
     } else {
       throw new Error(`Error fetching geocoding data: ${response.data.status}`);
@@ -99,4 +100,50 @@ async function getSuggestions(input) {
   }
 }
 
-export default { getCoordinate, getSuggestions, getDistanceTime };
+async function getNearByCaptains(lat, long, radius) {
+  try {
+    console.log(`Searching for captains near lat: ${lat}, long: ${long}, radius: ${radius} miles`);
+    
+    // Find all available captains
+    const allCaptains = await Captain.find({ 
+      isAvailable: true,
+      'currentLocation.lat': { $exists: true },
+      'currentLocation.long': { $exists: true }
+    });
+    
+    console.log(`Found ${allCaptains.length} available captains total`);
+    
+    // Filter by distance manually
+    const nearbyCaptains = allCaptains.filter(captain => {
+      const capLat = captain.currentLocation.lat;
+      const capLong = captain.currentLocation.long;
+      
+      if (!capLat || !capLong) return false;
+      
+      // Calculate distance using Haversine formula
+      const R = 3963.2; // Earth radius in miles
+      const dLat = (capLat - lat) * Math.PI / 180;
+      const dLon = (capLong - long) * Math.PI / 180;
+      const a = 
+        Math.sin(dLat/2) * Math.sin(dLat/2) +
+        Math.cos(lat * Math.PI / 180) * Math.cos(capLat * Math.PI / 180) * 
+        Math.sin(dLon/2) * Math.sin(dLon/2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      const distance = R * c;
+      
+      // Log the distance for debugging
+      console.log(`Captain ${captain._id}: distance = ${distance.toFixed(2)} miles (from ${capLat},${capLong} to ${lat},${long})`);
+      
+      return distance <= radius;
+    });
+    
+    console.log(`Found ${nearbyCaptains.length} captains within ${radius} miles`);
+    
+    return nearbyCaptains;
+  } catch (error) {
+    console.error("Error finding nearby captains:", error);
+    return [];
+  }
+}
+
+export default { getCoordinate, getSuggestions, getDistanceTime, getNearByCaptains };

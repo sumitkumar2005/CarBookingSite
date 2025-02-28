@@ -36,32 +36,56 @@ async function registerCaptain(req, res, next) {
 }
 
 async function loginCaptain(req, res, next) {
-    console.log("Request Body: ", req.body); // Add this line to check the incoming body
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-    }
     try {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ message: "Validation failed", errors: errors.array() });
+        }
+
         const { email, password } = req.body;
 
+        // Find captain and include password for verification
         const captain = await captainModel.findOne({ email }).select('+password');
-
         if (!captain) {
-            return res.status(400).json({ message: "Email or password is wrong" });
+            return res.status(400).json({ message: "Email or password is incorrect" });
         }
 
+        // Verify password
         const isMatch = await captain.comparePassword(password);
-
         if (!isMatch) {
-            return res.status(401).send({ message: "Email or Password is wrong" });
+            return res.status(400).json({ message: "Email or password is incorrect" });
         }
 
+        // Generate token
         const token = await captain.generateAuthToken();
 
-        res.cookie('token', token);
-        res.status(200).send({ token, captain });
+        // Remove password from response
+        const captainResponse = captain.toObject();
+        delete captainResponse.password;
+
+        // Set cookie and send response
+        res.cookie('token', token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            maxAge: 24 * 60 * 60 * 1000 // 24 hours
+        });
+
+        // Send response
+        return res.status(200).json({
+            success: true,
+            message: "Login successful",
+            token,
+            captain: captainResponse
+        });
+
     } catch (error) {
-        return res.status(400).json({ error });
+        console.error("Login error:", error);
+        return res.status(500).json({
+            success: false,
+            message: "An error occurred during login",
+            error: error.message
+        });
     }
 }
 
@@ -71,7 +95,7 @@ async function CaptainProfile(req, res) {
 
 async function logoutCaptain(req, res) {
     try {
-        const token = req.cookies.token;
+        const token = req.headers.authorization?.split(' ')[1]; // Get token from Authorization header
         if (!token) {
             return res.status(400).json({ message: "No token found to logout" });
         }
@@ -79,12 +103,63 @@ async function logoutCaptain(req, res) {
         // Add token to blacklist
         await Blacklist.create({ token });
 
-        // Clear cookie
-        res.clearCookie('token');
+        // Clear cookie if it exists
+        if (req.cookies.token) {
+            res.clearCookie('token');
+        }
+        
         res.status(200).json({ message: "Logged out successfully" });
     } catch (error) {
         res.status(500).json({ message: "Server error", error: error.message });
     }
 }
 
-export default { registerCaptain, loginCaptain, logoutCaptain, CaptainProfile };
+const updateLocation = async (req, res) => {
+    try {
+        const { location } = req.body;
+
+        if (!location || !location.lat || !location.long) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid location data.  Must include lat and long.'
+            });
+        }
+
+        const updatedCaptain = await captainModel.findByIdAndUpdate(
+            req.captain._id,
+            {
+                $set: {
+                    'location.lat': location.lat,
+                    'location.long': location.long,
+                    'currentLocation.lat': location.lat,
+                    'currentLocation.long': location.long,
+                    lastLocationUpdate: new Date()
+                }
+            },
+            { new: true }
+        );
+
+        if (!updatedCaptain) {
+            return res.status(404).json({
+                success: false,
+                message: 'Captain not found'
+            });
+        }
+
+        res.json({
+            success: true,
+            message: 'Location updated successfully',
+            location: updatedCaptain.location
+        });
+
+    } catch (error) {
+        console.error('Error updating captain location:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error updating location',
+            error: error.message
+        });
+    }
+};
+
+export default { registerCaptain, loginCaptain, logoutCaptain, CaptainProfile, updateLocation };

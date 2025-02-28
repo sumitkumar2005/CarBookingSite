@@ -22,29 +22,41 @@ async function getFare(pickUp, dropOff) {
         throw new Error("Pick up and drop off locations are required");
     }
 
-    const distanceTime = await mapsServices.getDistanceTime(pickUp, dropOff);
-    console.log("Distance Time Data:", distanceTime); // Debugging
+    try {
+        const distanceTime = await mapsServices.getDistanceTime(pickUp, dropOff);
+        console.log("Distance Time Data:", distanceTime);
 
-    if (!distanceTime || !distanceTime.distance || !distanceTime.duration) {
-        throw new Error("Failed to calculate distance and time");
-    }
+        if (!distanceTime || !distanceTime.distance || !distanceTime.duration) {
+            throw new Error("Failed to calculate distance and time");
+        }
 
-    const distance = parseFloat(distanceTime.distance.replace(/[^\d.]/g, ""));
-    const time = parseFloat(distanceTime.duration.replace(/[^\d.]/g, ""));
+        // Extract numeric values from the distance and duration strings
+        const distance = parseFloat(distanceTime.distance.replace(/[^\d.]/g, ""));
+        const time = parseFloat(distanceTime.duration.replace(/[^\d.]/g, ""));
 
-    if (isNaN(distance) || isNaN(time)) {
-        throw new Error("Invalid distance or time received (NaN)");
-    }
+        if (isNaN(distance) || isNaN(time)) {
+            throw new Error("Invalid distance or time received");
+        }
 
-    const fareDetails = Object.keys(VEHICLE_RATES).reduce((fares, vehicle) => {
-        const { baseFare, ratePerKm, ratePerMin } = VEHICLE_RATES[vehicle];
-        fares[vehicle] = baseFare + ratePerKm * distance + ratePerMin * time;
+        // Calculate fares for each vehicle type
+        const fares = {
+            auto: calculateFare(distance, time, VEHICLE_RATES.auto),
+            bike: calculateFare(distance, time, VEHICLE_RATES.bike),
+            car: calculateFare(distance, time, VEHICLE_RATES.car)
+        };
+
+        console.log("Calculated fares:", fares);
         return fares;
-    }, {});
-
-    return fareDetails;
+    } catch (error) {
+        console.error("Error in getFare:", error);
+        throw error;
+    }
 }
 
+function calculateFare(distance, time, rates) {
+    const { baseFare, ratePerKm, ratePerMin } = rates;
+    return baseFare + (ratePerKm * distance) + (ratePerMin * time);
+}
 
 async function createRide({ user, pickUp, dropOff, vehicleType }) {
     if (!user || !pickUp || !dropOff || !vehicleType) {

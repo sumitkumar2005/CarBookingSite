@@ -9,7 +9,12 @@ import captainRoute from './routes/captain.routes.js'
 import mapsRoute from './routes/maps.route.js'
 import rideRoute from './routes/rides.routes.js'
 const app = express();
-app.use(cors());
+app.use(cors({
+    origin: "http://localhost:5173", // Your frontend URL
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 connect();

@@ -20,24 +20,18 @@ const UserLogin = () => {
         password,
       });
 
-      // Check the response structure
-      if (response.status==200) {
-        setMessage("Signup successful! Redirecting...");
-        setUserData(response.data.user)
+      if (response.data.token) {
+        // Debug the token
+        console.log("Received token:", response.data.token);
+        localStorage.setItem("token", response.data.token);
+        // Verify token was saved
+        console.log("Saved token:", localStorage.getItem("token"));
+        setUserData(response.data.user);
         navigate("/start");
-    } else {
-        setMessage("Unexpected response format. Signup failed.");
-    }
-      setMessage("Login successful! User name: " + response.data.user.fullname.firstname);
-      
-
-      // Save token to localStorage (optional)
-      localStorage.setItem("token", response.data.token);
+      }
     } catch (error) {
-      // Handle login error
-      setMessage(
-        "Login failed: " + (error.response?.data?.message || "An error occurred.")
-      );
+      console.error("Login error:", error);
+      setMessage(error.response?.data?.message || "Login failed");
     }
   };
 

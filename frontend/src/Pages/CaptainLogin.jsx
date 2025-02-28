@@ -14,29 +14,40 @@ const CaptainLogin = () => {
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
-    e.preventDefault(); // Prevent page reload
-    setLoading(true); // Start loading
+    e.preventDefault();
+    setLoading(true);
+    setMessage(""); // Clear any previous messages
 
     try {
-      // Send login request to backend
-      const response = await axios.post("http://localhost:5000/captains/login", {
-        email,
-        password,
-      });
+        const response = await axios.post(
+            `${import.meta.env.VITE_BASE_URL}/captains/login`,
+            { email, password },
+            {
+                headers: {
+                    'Content-Type':'application/json'
+                },
+                withCredentials: true // Important for cookies
+            }
+        );
 
-      if (response.status === 200) {
-        setCaptainData(response.data.captain); // Update context data
-        localStorage.setItem("token", response.data.token); // Save token
-        navigate("/CaptainHome"); // Redirect to home page
-      }
+        if (response.data?.captain && response.data?.token) {
+            // Store token
+            localStorage.setItem("token", response.data.token);
+            
+            // Update context
+            setCaptainData(response.data.captain);
+            
+            // Navigate after successful login
+            navigate("/CaptainHome");
+        } else {
+            setMessage("Invalid response from server");
+        }
     } catch (error) {
-      // Improved error handling
-      const errorMessage =
-        error.response?.data?.message || "Login failed. Please try again.";
-      setMessage(errorMessage);
-      console.error("Login failed:", errorMessage);
+        const errorMessage = error.response?.data?.message || "Login failed. Please try again.";
+        setMessage(errorMessage);
+        console.error("Login failed:", errorMessage);
     } finally {
-      setLoading(false); // Stop loading
+        setLoading(false);
     }
   };
 

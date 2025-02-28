@@ -2,6 +2,8 @@ import mongoose from "mongoose";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 
+const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-2024";
+
 const captainSchema = new mongoose.Schema({
     fullname: {
         firstname: {
@@ -29,6 +31,8 @@ const captainSchema = new mongoose.Schema({
     },
     socketId: {
         type: String,
+        default: null,
+        index: true
     },
     status: {
         type: String,
@@ -58,18 +62,38 @@ const captainSchema = new mongoose.Schema({
         },
     },
     location: {
-        lat: {
-            type: Number,
+        type: {
+            type: String,
+            enum: ['Point'],
+            default: 'Point'
         },
-        long: {
-            type: Number,
-        },
+        coordinates: {
+            type: [Number], // [longitude, latitude]
+            index: '2dsphere'
+        }
     },
+    currentLocation: {
+        long: Number,
+        lat: Number
+    },
+    lastLocationUpdate: {
+        type: Date,
+        default: Date.now
+    },
+    isAvailable: {
+        type: Boolean,
+        default: false
+    }
 });
 
-captainSchema.methods.generateAuthToken = async function () {
-    const token = jwt.sign({ _id: this._id }, "YOUR_CAPTAIN");
-    return token;
+captainSchema.index({ location: "2dsphere" });
+
+captainSchema.methods.generateAuthToken = function() {
+    return jwt.sign(
+        { _id: this._id },
+        JWT_SECRET,
+        { expiresIn: '24h' }
+    );
 };
 
 captainSchema.statics.hashPassword = async function (password) {

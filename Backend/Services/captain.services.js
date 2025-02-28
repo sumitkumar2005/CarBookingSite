@@ -24,4 +24,4 @@ async function createCaptain({ firstname, lastname, email, password, color, plat
     return captain;
 }
 
-export default createCaptain;
+export default { createCaptain };

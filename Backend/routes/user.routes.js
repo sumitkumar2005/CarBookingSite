@@ -2,6 +2,7 @@ import express from 'express';
 import { body, validationResult } from 'express-validator';
 import userController from '../Controllers/user.controller.js';
 import authmiddleware from  '../middleware/auth.middleware.js'
+import userModel from '../models/user.model.js';
 
 const router = express.Router();
 router.post(
@@ -28,5 +29,17 @@ router.post('/login',[(body('email').isEmail().withMessage('Invalid Email'),body
 router.get('/profile', authmiddleware.authUser, userController.getUserProfile);
 router.get('/logout',authmiddleware.authUser,userController.logoutUser)
 
+router.get('/check-socket', authmiddleware.authUser, async (req, res) => {
+    try {
+        const user = await userModel.findById(req.user._id);
+        res.json({ 
+            userId: user._id,
+            socketId: user.socketId,
+            hasSocket: !!user.socketId
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
 
 export default router;

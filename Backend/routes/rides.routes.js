@@ -6,6 +6,7 @@ import mapsServices from '../Services/ride.service.js';
 import rideService from "../Services/ride.service.js";
 const router = express.Router();
 import { query } from "express-validator";
+
 router.get('/', (req, res) => {
     res.send('Ride API');
 });
@@ -30,13 +31,17 @@ router.get('/get-fare',
     async (req, res) => {
         try {
             const { pickUp, dropOff } = req.query;
+            console.log("Received fare request for:", { pickUp, dropOff });
+            
             const fare = await rideService.getFare(pickUp, dropOff);
+            console.log("Calculated fare:", fare);
+            
             return res.json(fare);
         } catch (error) {
+            console.error("Fare calculation error:", error);
             return res.status(400).json({ error: error.message });
         }
     }
 );
-
 
 export default router;

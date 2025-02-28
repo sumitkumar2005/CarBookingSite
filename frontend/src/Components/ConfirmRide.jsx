@@ -1,75 +1,107 @@
 import React from "react";
 
-const ConfirmRide = ({ setConfirm, Pickup, DropOff, selectedCar, price }) => {
+const ConfirmRide = ({ 
+  Pickup, 
+  DropOff, 
+  selectedRide, 
+  price, 
+  setConfirm, 
+  openSearching 
+}) => {
+  console.log("ConfirmRide Props:", {
+    selectedRide,
+    price,
+    currentFare: price?.[selectedRide]
+  });
+
+  // Function to format price
+  const formatPrice = (amount) => {
+    if (amount === undefined || amount === null || isNaN(amount)) {
+      console.log("Invalid amount:", amount);
+      return 'N/A';
+    }
+    return `₹${Math.round(amount).toLocaleString()}`;
+  };
+
+  // Function to get formatted vehicle type
+  const getVehicleType = (type) => {
+    const types = {
+      car: 'Car',
+      bike: 'Bike',
+      auto: 'Auto'
+    };
+    return types[type] || type?.toUpperCase() || 'N/A';
+  };
+
+  // Get current fare based on selected ride
+  const getCurrentFare = () => {
+    if (!price || !selectedRide) {
+      console.log("Missing price or selectedRide:", { price, selectedRide });
+      return null;
+    }
+    const fare = price[selectedRide];
+    console.log("Current fare:", fare);
+    return fare;
+  };
+
+  const currentFare = getCurrentFare();
+
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-60 z-50">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-8">
-        <h2 className="text-3xl font-bold text-center text-gray-800 mb-6">
-          Confirm Your Ride
-        </h2>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-2xl w-full max-w-md mx-auto p-4 md:p-6 space-y-4 md:space-y-6">
+        {/* Header */}
+        <div className="text-center space-y-2">
+          <h2 className="text-xl md:text-2xl font-bold">Confirm Your Ride</h2>
+          <p className="text-sm md:text-base text-gray-600">Please review your ride details</p>
+        </div>
 
         {/* Ride Details */}
-        <div className="space-y-4">
+        <div className="space-y-3 md:space-y-4">
+          {/* Pickup Location */}
           <div className="flex justify-between items-center">
-            <span className="text-lg font-medium text-gray-600">Pickup:</span>
-            <span className="text-lg text-gray-800">{Pickup}</span>
+            <span className="text-sm md:text-base font-medium text-gray-600">Pickup:</span>
+            <span className="text-sm md:text-base text-gray-800 text-right flex-1 ml-4">{Pickup}</span>
           </div>
+
+          {/* Drop-off Location */}
           <div className="flex justify-between items-center">
-            <span className="text-lg font-medium text-gray-600">DropOff:</span>
-            <span className="text-lg text-gray-800">{DropOff}</span>
+            <span className="text-sm md:text-base font-medium text-gray-600">Drop-off:</span>
+            <span className="text-sm md:text-base text-gray-800 text-right flex-1 ml-4">{DropOff}</span>
           </div>
+
+          {/* Vehicle Type */}
           <div className="flex justify-between items-center">
-            <span className="text-lg font-medium text-gray-600">Vehicle Type:</span>
-            <span className="text-lg text-gray-800 capitalize">{selectedCar?.id || "N/A"}</span>
+            <span className="text-sm md:text-base font-medium text-gray-600">Vehicle Type:</span>
+            <span className="text-sm md:text-base text-gray-800 font-semibold">
+              {getVehicleType(selectedRide)}
+            </span>
           </div>
-          <div className="flex justify-between items-center">
-            <span className="text-lg font-medium text-gray-600">Fare:</span>
-            <span className="text-lg font-bold text-gray-800">
-              ₹{price ? Math.round(price).toLocaleString() : "N/A"}
+
+          {/* Fare Amount */}
+          <div className="flex justify-between items-center bg-gray-50 p-3 rounded-lg">
+            <span className="text-sm md:text-base font-medium text-gray-600">Fare:</span>
+            <span className="text-sm md:text-base text-gray-800 font-bold">
+              {formatPrice(currentFare)}
             </span>
           </div>
         </div>
 
-        {/* Vehicle Details */}
-        {selectedCar && (
-          <div className="mt-6 border-t pt-6">
-            <h3 className="text-xl font-semibold text-gray-700 mb-4">
-              Vehicle Details
-            </h3>
-            <div className="flex items-center gap-4">
-              <img
-                src={selectedCar.img}
-                alt={selectedCar.name}
-                className="w-24 h-24 object-cover rounded-lg shadow-md"
-              />
-              <div>
-                <p className="text-2xl font-bold text-gray-800">
-                  {selectedCar.name}
-                </p>
-                <p className="text-sm text-gray-500 mt-1">
-                  {selectedCar.description}
-                </p>
-                <p className="text-xl font-semibold text-gray-800 mt-2">
-                  ₹{selectedCar.price}
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Buttons */}
-        <div className="mt-8 flex space-x-4">
+        {/* Action Buttons */}
+        <div className="flex gap-4 mt-6">
           <button
             onClick={() => setConfirm(false)}
-            className="flex-1 py-3 px-6 bg-gray-200 text-gray-800 rounded-xl hover:bg-gray-300 transition-colors"
+            className="flex-1 py-2.5 md:py-3 px-4 md:px-6 bg-gray-200 text-gray-800 
+              rounded-xl hover:bg-gray-300 transition-colors text-sm md:text-base"
           >
             Cancel
           </button>
           <button
             onClick={() => {
               setConfirm(false);
+              if (openSearching) openSearching();
             }}
-            className="flex-1 py-3 px-6 bg-black text-white rounded-xl hover:bg-gray-800 transition-colors"
+            className="flex-1 py-2.5 md:py-3 px-4 md:px-6 bg-black text-white 
+              rounded-xl hover:bg-gray-800 transition-colors text-sm md:text-base"
           >
             Confirm
           </button>
