@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from "react";
 import { gsap } from "gsap";
 import { FaMapMarkerAlt } from "react-icons/fa";
 import { IoClose } from "react-icons/io5";
+import { useSocket } from "../Context/SocketContext";
 
 const CaptainRide = ({ 
   customer, 
@@ -10,6 +11,7 @@ const CaptainRide = ({
   isVisible, 
   setIsVisible 
 }) => {
+  const { socket } = useSocket();
   const popupRef = useRef(null);
 
   useEffect(() => {
@@ -38,9 +40,7 @@ const CaptainRide = ({
   if (!isVisible) return null;
 
   return (
-    <div 
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-    >
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div 
         ref={popupRef}
         className="w-[30rem] bg-white rounded-2xl p-6 shadow-2xl relative"

@@ -7,7 +7,7 @@ import CaptainLogin from './Pages/CaptainLogin';
 import CaptainSignup from './Pages/CaptainSignup';
 import Start from './Pages/Start';
 import UserProtectedWrapper from './Pages/UserProctectedWrapper';
-import Navbar from './Components/Navbar';
+import Navbar from './components/Navbar';
 
 import CaptainProctectWrapper from './Pages/CaptainProtectWrapper';
 import WaitingDriver from './Components/WaitingForDriver';

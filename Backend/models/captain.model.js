@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 
-const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-2024";
+const JWT_SECRET = process.env.JWT_SECRET || "THIS IS MY SECRET BRO";
 
 const captainSchema = new mongoose.Schema({
     fullname: {

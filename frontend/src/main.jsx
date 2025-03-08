@@ -13,7 +13,7 @@ createRoot(document.getElementById('root')).render(
   <StrictMode>
     <ErrorBoundary>
       <CaptainContext>
-        <UserContext> {/* Wrapping your app with the UserContext provider */}
+        <UserContext>
           <SocketProvider>
             <BrowserRouter>
               <App />

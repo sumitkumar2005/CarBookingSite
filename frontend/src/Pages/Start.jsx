@@ -6,11 +6,17 @@ import CarInfo from "../Components/CarInfo.jsx"; // Verify this path
 import ConfirmRide from "../Components/ConfirmRide.jsx"; // Verify this path
 import SearchingDriver from "../Components/SearchingDriver.jsx"; // Verify this path
 import { UserDataContext } from "../Context/UserContext.jsx";
-import { useSocket } from "../Context/SocketContext"; // Changed to useSocket hook
+import { useSocket } from "../Context/SocketContext";
+import { SocketContext } from "../Context/SocketContext";
+import { toast } from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
 
 function Start() {
-  const { emitEvent, connected } = useSocket(); // Add connected status
-  const { userData } = useContext(UserDataContext); // Changed from user to userData to match context
+  const [waitingForDriver, setWaitingForDriver] = useState(false);
+  const { socket } = useSocket();
+  const { userData } = useContext(UserDataContext);
+  const { emitEvent, connected } = useSocket();
+  const navigate = useNavigate();
 
   const [pickup, setPickup] = useState("");
   const [dropoff, setDropoff] = useState("");
@@ -18,16 +24,29 @@ function Start() {
   const [showDropoffDropdown, setShowDropoffDropdown] = useState(false);
   const [pickupSuggestions, setPickupSuggestions] = useState([]);
   const [dropoffSuggestions, setDropoffSuggestions] = useState([]);
-  const [selectedRide, setSelectedRide] = useState("");
-  const [showCar, setShowCar] = useState(false);
+  const [selectedRide, setSelectedRide] = useState(null);
+  const [showCar, setshowCar] = useState(false);
   const [confirm, setConfirm] = useState(false);
-  const [price, setPrice] = useState(null);
-  const [rides, setRides] = useState([]); // Array to hold ride options
-  const [lastConfirm, setLastConfirm] = useState(false);
   const [selectedCarDetails, setSelectedCarDetails] = useState(null);
+  const [searching, setSearching] = useState(false);
 
   // Ref for debouncing API calls
   const debounceTimer = useRef(null);
+
+  useEffect(() => {
+    if (socket) {
+      socket.on('ride-confirmed', (ride) => {
+        setWaitingForDriver(true);
+        // Handle ride confirmation
+        console.log('Ride confirmed:', ride);
+      });
+
+      // Cleanup listener when component unmounts
+      return () => {
+        socket.off('ride-confirmed');
+      };
+    }
+  }, [socket]);
 
   // Join socket room when component mounts or when socket connects
   useEffect(() => {
@@ -49,43 +68,6 @@ function Start() {
     gsap.from(".map-container", { opacity: 0, duration: 2, y: -50 });
   }, []);
 
-  // Fetch price when pickup or dropoff changes
-  useEffect(() => {
-    const fetchPrice = async () => {
-      if (!pickup || !dropoff) {
-        setPrice(null);
-        return;
-      }
-
-      try {
-        const token = localStorage.getItem("token");
-        const response = await axios.get(
-          `${import.meta.env.VITE_BASE_URL}/rides/get-fare`,
-          {
-            params: { pickUp: pickup, dropOff: dropoff },
-            headers: {
-              Authorization: `Bearer ${token}`
-            },
-          }
-        );
-
-        if (response.data && typeof response.data === 'object') {
-          setPrice(response.data);
-        } else {
-          console.error("Invalid price data received:", response.data);
-          setPrice(null);
-        }
-      } catch (error) {
-        console.error("Error fetching fare:", error);
-        setPrice(null);
-      }
-    };
-
-    if (pickup && dropoff) {
-      fetchPrice();
-    }
-  }, [pickup, dropoff]);
-
   // Fetch location suggestions
   const fetchSuggestions = async (query, type) => {
     if (!query.trim()) {
@@ -94,9 +76,9 @@ function Start() {
     }
 
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem('token');
       const response = await axios.get(
-        `${import.meta.env.VITE_BASE_URL}/maps/get-suggestions`,
+        `${import.meta.env.VITE_BASE_URL}/maps/suggestions`,
         {
           params: { input: query },
           headers: {
@@ -104,19 +86,14 @@ function Start() {
           }
         }
       );
-
-      const suggestions = response.data.suggestions || [];
-
+      
       if (type === "pickup") {
-        setPickupSuggestions(suggestions);
-        setShowPickupDropdown(true);
+        setPickupSuggestions(response.data);
       } else {
-        setDropoffSuggestions(suggestions);
-        setShowDropoffDropdown(true);
+        setDropoffSuggestions(response.data);
       }
     } catch (error) {
       console.error("Error fetching suggestions:", error);
-      type === "pickup" ? setPickupSuggestions([]) : setDropoffSuggestions([]);
     }
   };
 
@@ -154,20 +131,49 @@ function Start() {
     }
   };
 
+  // Debug logs to track state changes
+  useEffect(() => {
+    console.log("Selected car details updated:", selectedCarDetails);
+  }, [selectedCarDetails]);
+
+  const handleShowCar = () => {
+    if (!pickup || !dropoff) {
+      toast.error("Please enter pickup and drop-off locations");
+      return;
+    }
+    setshowCar(true);
+  };
+
+  const openSearching = () => {
+    setSearching(true);
+    setConfirm(false);
+  };
+
   return (
     <div className="relative z-0">
       {confirm && (
-        <ConfirmRide 
-          setConfirm={setConfirm} 
-          Pickup={pickup} 
-          DropOff={dropoff} 
-          selectedCar={selectedCarDetails}
-          price={price && selectedRide ? price[selectedRide] : null}
-          setLastConfirm={setLastConfirm} // Added missing prop
+        <ConfirmRide
+          Pickup={pickup}
+          DropOff={dropoff}
+          selectedRide={selectedRide}
+          selectedCarDetails={selectedCarDetails}
+          setConfirm={setConfirm}
+          openSearching={openSearching}
         />
       )}
       
-      {lastConfirm && <SearchingDriver setC={setLastConfirm} pickup={pickup} />}
+      {showCar && (
+        <CarInfo
+          selectedRide={selectedRide}
+          setSelectedRide={setSelectedRide}
+          showCar={showCar}
+          setshowCar={setshowCar}
+          DropOff={dropoff}
+          Pickup={pickup}
+          setConfirm={setConfirm}
+          setSelectedCarDetails={setSelectedCarDetails}
+        />
+      )}
       
       <div className="min-h-screen bg-white flex flex-col">
         <div className="flex flex-col lg:flex-row justify-between items-start px-8 py-16">
@@ -227,7 +233,7 @@ function Start() {
 
             <button
               type="button"
-              onClick={() => setShowCar(!showCar)}
+              onClick={handleShowCar}
               className="flex items-center justify-center w-56 py-3 bg-black text-white rounded-lg hover:bg-gray-900 transition"
             >
               Continue
@@ -240,20 +246,7 @@ function Start() {
         </div>
       </div>
 
-      {showCar && (
-        <CarInfo
-          selectedRide={selectedRide}
-          price={price}
-          setPrice={setPrice}
-          showCar={showCar}
-          setshowCar={setShowCar}
-          DropOff={dropoff}
-          Pickup={pickup}
-          setConfirm={setConfirm}
-          setSelectedRide={setSelectedRide}
-          setSelectedCarDetails={setSelectedCarDetails}
-        />
-      )}
+      
     </div>
   );
 }

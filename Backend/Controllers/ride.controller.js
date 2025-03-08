@@ -3,6 +3,25 @@ import { validationResult } from "express-validator";
 import mapsServices from "../Services/maps.services.js";
 import { sendMessageToSocketId } from "../socket.js";
 
+
+export async function confirmRide(req, res) {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).send({ errors: errors.array() });
+    }
+    const {rideId} = req.body;
+    try {
+        const ride = await rideService.confirmRide(rideId,req.captain._id)
+        sendMessageToSocketId(ride.user.socketId,{
+            event:'ride-confirmed',
+            data:ride
+        })
+        return res.status(200).json(ride);
+    } catch (error) {
+        return res.status(500).send({"message":error.message})
+    }
+    
+}
 export default async function ControllerCreateRide(req, res) {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {

@@ -23,6 +23,7 @@ async function getFare(pickUp, dropOff) {
     }
 
     try {
+        // Get distance and time from Google Maps API
         const distanceTime = await mapsServices.getDistanceTime(pickUp, dropOff);
         console.log("Distance Time Data:", distanceTime);
 
@@ -55,7 +56,32 @@ async function getFare(pickUp, dropOff) {
 
 function calculateFare(distance, time, rates) {
     const { baseFare, ratePerKm, ratePerMin } = rates;
-    return baseFare + (ratePerKm * distance) + (ratePerMin * time);
+    return Math.round(baseFare + (ratePerKm * distance) + (ratePerMin * time));
+}
+
+export async function confirmRide(rideId, captainId) {
+    try {
+        const ride = await rideModel.findById(rideId)
+            .populate('user')
+            .populate('captain');
+
+        if (!ride) {
+            throw new Error('Ride not found');
+        }
+
+        if (ride.status !== 'pending') {
+            throw new Error('Ride is no longer available');
+        }
+
+        ride.captain = captainId;
+        ride.status = 'confirmed';
+        await ride.save();
+
+        return ride;
+    } catch (error) {
+        console.error('Error confirming ride:', error);
+        throw error;
+    }
 }
 
 async function createRide({ user, pickUp, dropOff, vehicleType }) {
@@ -90,5 +116,4 @@ async function createRide({ user, pickUp, dropOff, vehicleType }) {
     return ride;
 }
 
-
-export default { createRide, getFare, getOtp };
+export default { createRide, getFare, getOtp, confirmRide };

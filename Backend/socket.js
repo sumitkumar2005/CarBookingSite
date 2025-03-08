@@ -1,20 +1,95 @@
 import { Server } from 'socket.io';
 import userModel from './models/user.model.js';
 import captainModel from './models/captain.model.js';
+import jwt from 'jsonwebtoken';
+
+import rideService from './Services/ride.service.js';
+
+const connectedClients = new Map();
+const maxConnectionsPerUser = 1;
+const connectionThrottle = new Map(); // Track connection attempts
+
+// Declare io as a module-level variable so it can be accessed by all functions
 let io;
 
 export const initializeSocket = (server) => {
     io = new Server(server, {
         cors: {
-            origin: "*", // Your frontend URL
+            origin: "*",  // Allow all origins (adjust as needed)
             methods: ["GET", "POST"],
             credentials: true
         },
-        transports: ['websocket', 'polling']
+        pingTimeout: 60000,
+        connectTimeout: 5000,
+        // Add rate limiting
+        connectionRateLimit: {
+            max: 5, // maximum connections per window
+            windowMs: 10000 // 10 seconds
+        }
+    });
+
+    // Rate limiting middleware
+    io.use((socket, next) => {
+        const clientIp = socket.handshake.address;
+        const now = Date.now();
+        const connectionData = connectionThrottle.get(clientIp) || { count: 0, firstAttempt: now };
+
+        // Reset if window has passed
+        if (now - connectionData.firstAttempt > 10000) {
+            connectionData.count = 0;
+            connectionData.firstAttempt = now;
+        }
+
+        if (connectionData.count >= 5) {
+            return next(new Error('Too many connection attempts. Please try again later.'));
+        }
+
+        connectionData.count++;
+        connectionThrottle.set(clientIp, connectionData);
+        next();
+    });
+
+    // Authentication middleware
+    io.use(async (socket, next) => {
+        try {
+            const token = socket.handshake.auth.token;
+            if (!token) {
+                return next(new Error('Authentication failed: No token provided'));
+            }
+
+            const decoded = jwt.verify(token, "THIS IS MY SECRET BRO");
+            
+            // Check for existing connection
+            const existingSocket = connectedClients.get(decoded._id);
+            if (existingSocket) {
+                // Close existing connection before allowing new one
+                existingSocket.disconnect(true);
+                connectedClients.delete(decoded._id);
+                await new Promise(resolve => setTimeout(resolve, 500)); // Small delay
+            }
+
+            socket.userId = decoded._id;
+            connectedClients.set(decoded._id, socket);
+            next();
+        } catch (error) {
+            console.error('Socket authentication error:', error);
+            next(new Error('Authentication failed'));
+        }
     });
 
     io.on('connection', (socket) => {
-        console.log('New socket connection established:', socket.id);
+        console.log('Client connected:', socket.id);
+
+        socket.on('error', (error) => {
+            console.error('Socket error:', error);
+        });
+
+        socket.on('disconnect', () => {
+            if (socket.userId) {
+                connectedClients.delete(socket.userId);
+            }
+            console.log('Client disconnected:', socket.id);
+        });
 
         // Handle socket connection
         socket.on('get-captain-nearby', async (long, lat) => {
@@ -32,6 +107,20 @@ export const initializeSocket = (server) => {
                                 10 / 3963.2 // 10 mile radius, converted to radians
                             ]
                         }
+                    }
+                });
+
+                // Emit ride request to nearby captains
+                nearByCaptains.forEach(captain => {
+                    if (captain.socketId) {
+                        io.to(captain.socketId).emit('new-ride', {
+                            type: 'new-ride-request',
+                            data: {
+                                pickup: long,
+                                dropoff: lat,
+                                // Add other relevant ride details
+                            }
+                        });
                     }
                 });
 
@@ -229,6 +318,87 @@ export const initializeSocket = (server) => {
                 socket.emit('error', { message: 'Failed to update availability' });
             }
         });
+
+        socket.on('create-ride', async (data) => {
+            try {
+                console.log('Ride creation request received:', data);
+                const { rideId, userId, pickUp, dropOff, vehicleType, fare } = data;
+                
+                if (!rideId || !userId) {
+                    socket.emit('error', { message: 'Invalid ride data' });
+                    return;
+                }
+                
+                // Find nearby captains to notify about the ride
+                const pickupCoordinates = await mapsServices.getCoordinate(pickUp);
+                if (!pickupCoordinates) {
+                    socket.emit('error', { message: 'Could not determine pickup coordinates' });
+                    return;
+                }
+                
+                const nearByCaptains = await mapsServices.getNearByCaptains(
+                    pickupCoordinates.lat,
+                    pickupCoordinates.long,
+                    5, // 5 mile radius
+                    false // Normal mode
+                );
+                
+                console.log(`Found ${nearByCaptains.length} captains in radius for ride ${rideId}`);
+                
+                // Notify each nearby captain
+                nearByCaptains.forEach(captain => {
+                    if (captain.socketId) {
+                        io.to(captain.socketId).emit('ride-request', {
+                            event: 'ride-request',
+                            data: {
+                                rideId,
+                                pickUp,
+                                dropOff,
+                                vehicleType,
+                                fare
+                            }
+                        });
+                    }
+                });
+                
+                socket.emit('ride-created', {
+                    success: true,
+                    rideId,
+                    captainsNotified: nearByCaptains.length
+                });
+                
+            } catch (error) {
+                console.error('Error handling ride creation:', error);
+                socket.emit('error', { 
+                    message: 'Failed to process ride creation',
+                    error: error.message
+                });
+            }
+        });
+
+        socket.on('ride-response', async (data) => {
+            try {
+                const { rideId, captainId, response } = data;
+                
+                if (response === 'accept') {
+                    const ride = await rideService.confirmRide(rideId, captainId);
+                    
+                    // Notify the user
+                    if (ride.user.socketId) {
+                        io.to(ride.user.socketId).emit('ride-confirmed', {
+                            ride,
+                            captain: ride.captain
+                        });
+                    }
+                    
+                    // Notify other captains that the ride is no longer available
+                    socket.broadcast.emit('ride-taken', { rideId });
+                }
+            } catch (error) {
+                console.error('Error handling ride response:', error);
+                socket.emit('error', { message: error.message });
+            }
+        });
     });
 
     // Set up interval to update captain location
@@ -247,6 +417,23 @@ export const initializeSocket = (server) => {
             console.error('Error sending captain location updates:', error);
         }
     }, 10000); // Update every 10 seconds
+
+    // Clean up connections periodically
+    setInterval(() => {
+        connectedClients.forEach((socket, userId) => {
+            if (!socket.connected) {
+                connectedClients.delete(userId);
+            }
+        });
+        
+        // Clean up throttle data
+        const now = Date.now();
+        connectionThrottle.forEach((data, ip) => {
+            if (now - data.firstAttempt > 10000) {
+                connectionThrottle.delete(ip);
+            }
+        });
+    }, 30000);
 
     return io;
 };

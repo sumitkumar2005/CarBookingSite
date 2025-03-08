@@ -1,7 +1,8 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
 import { io } from 'socket.io-client';
 import { UserDataContext } from './UserContext';
 import { CaptainDataContext } from './CaptainContext';
+import { toast } from 'react-hot-toast';
 
 export const SocketContext = createContext();
 
@@ -9,54 +10,131 @@ function SocketProvider({ children }) {
     const [socket, setSocket] = useState(null);
     const [connected, setConnected] = useState(false);
     const { userData } = useContext(UserDataContext);
+    const [rides, setRides] = useState([]);
     const { captainData } = useContext(CaptainDataContext);
+    
+    // Add connection attempt tracking
+    const connectionAttempts = useRef(0);
+    const RECONNECT_ATTEMPTS = 3;
+    const BASE_DELAY = 2000;
+    const MAX_DELAY = 10000;
+    const reconnectDelay = useRef(1000); // Start with 1 second
 
     // Initialize socket connection
     useEffect(() => {
-        const token = localStorage.getItem('token');
-        if (!token) return;
+        const initializeSocket = () => {
+            if (connectionAttempts.current >= RECONNECT_ATTEMPTS) {
+                toast.error('Unable to establish connection. Please refresh the page.');
+                return;
+            }
 
-        const newSocket = io(import.meta.env.VITE_BASE_URL, {
-            auth: {
-                token
-            },
-            transports: ['websocket'],
-            reconnection: true,
-            reconnectionAttempts: 5
-        });
+            const token = localStorage.getItem('token');
+            if (!token) {
+                toast.error('Authentication token not found');
+                return;
+            }
 
-        // Set up connection event handlers
-        newSocket.on('connect', () => {
-            console.log('Socket Connected! Socket ID:', newSocket.id);
-            setConnected(true);
-        });
+            const newSocket = io(import.meta.env.VITE_BASE_URL, {
+                auth: { token },
+                transports: ['websocket'],
+                reconnection: false,
+                timeout: 5000,
+                forceNew: true,
+                reconnectionAttempts: RECONNECT_ATTEMPTS,
+                reconnectionDelay: BASE_DELAY,
+                reconnectionDelayMax: MAX_DELAY
+            });
 
-        newSocket.on('connect_error', (error) => {
-            console.error('Socket connection error:', error);
-            setConnected(false);
-            // Exponential backoff reconnection
-            const reconnectionDelay = Math.min(30000, (2 ** newSocket.reconnectionAttempts) * 1000); // max delay 30s
-            console.log(`Attempting reconnection in ${reconnectionDelay/1000} seconds`);
-            setTimeout(() => {
-                newSocket.connect();
-            }, reconnectionDelay);
-        });
+            newSocket.on('connect', () => {
+                console.log('Socket Connected! Socket ID:', newSocket.id);
+                setConnected(true);
+                connectionAttempts.current = 0; // Reset attempts on successful connection
+                reconnectDelay.current = 1000; // Reset delay
+            });
 
-        newSocket.on('disconnect', () => {
-            console.log('Socket disconnected');
-            setConnected(false);
-        });
+            newSocket.on('connect_error', (error) => {
+                console.error('Socket connection error:', error);
+                setConnected(false);
+                connectionAttempts.current++;
 
-        setSocket(newSocket);
+                if (error.message.includes('Authentication failed')) {
+                    toast.error('Authentication failed. Please login again.');
+                    localStorage.removeItem('token'); // Clear invalid token
+                    window.location.href = '/login'; // Redirect to login
+                    return;
+                }
 
-        // Cleanup on unmount
+                if (connectionAttempts.current < RECONNECT_ATTEMPTS) {
+                    console.log(`Attempt ${connectionAttempts.current} of ${RECONNECT_ATTEMPTS}`);
+                    setTimeout(initializeSocket, reconnectDelay.current);
+                    reconnectDelay.current = Math.min(reconnectDelay.current * 2, MAX_DELAY);
+                } else {
+                    toast.error('Connection failed. Please refresh the page.');
+                }
+            });
+
+            newSocket.on('disconnect', (reason) => {
+                console.log('Socket disconnected:', reason);
+                setConnected(false);
+                
+                // Only attempt reconnect for certain disconnect reasons
+                if (reason === 'io server disconnect' || reason === 'transport close') {
+                    connectionAttempts.current++;
+                    if (connectionAttempts.current < RECONNECT_ATTEMPTS) {
+                        setTimeout(initializeSocket, reconnectDelay.current);
+                    }
+                }
+            });
+
+            setSocket(newSocket);
+
+            // Cleanup function
+            return () => {
+                if (newSocket) {
+                    newSocket.off('connect');
+                    newSocket.off('connect_error');
+                    newSocket.off('disconnect');
+                    newSocket.close();
+                }
+            };
+        };
+
+        initializeSocket();
+    }, [userData?._id, captainData?._id]); // Only reinitialize on user/captain ID change
+
+    // Listen for ride requests
+    useEffect(() => {
+        if (socket && connected) {
+            socket.on("ride-request", (rideData) => {
+                console.log("Ride request received:", rideData);
+                setRides(prev => [...prev, rideData]);
+            });
+        }
+
         return () => {
-            if (newSocket) {
-                console.log('Cleaning up socket connection');
-                newSocket.disconnect();
+            if (socket) {
+                socket.off("ride-request");
             }
         };
-    }, []);
+    }, [socket, connected]);
+
+    // Listen for ride updates
+    useEffect(() => {
+        if (socket && connected) {
+            socket.on('ride-update', (updateData) => {
+                console.log('Ride update received:', updateData);
+                setRides(prev => prev.map(ride => 
+                    ride._id === updateData._id ? { ...ride, ...updateData } : ride
+                ));
+            });
+        }
+
+        return () => {
+            if (socket) {
+                socket.off('ride-update');
+            }
+        };
+    }, [socket, connected]);
 
     // Handle user/captain join when they become available
     useEffect(() => {
@@ -77,26 +155,17 @@ function SocketProvider({ children }) {
             socket.on('error', (error) => {
                 console.error('Socket error:', error);
                 if (error.message === 'Authentication failed') {
-                    // Use a better notification method than alert, e.g., state to show error message
                     console.log('Authentication failed, redirecting to login');
-                    window.location.href = '/captain/login'; // Or use navigate if available in context
+                    window.location.href = '/CaptainLogin';
                 }
             });
-
-            socket.on('disconnect', (reason) => {
-                console.log('Socket disconnected:', reason);
-                // Handle reconnection if needed
-                if (reason === 'io server disconnect') {
-                    // Server disconnected the socket
-                    socket.connect();
-                }
-            });
-
-            return () => {
-                socket.off('error');
-                socket.off('disconnect');
-            };
         }
+
+        return () => {
+            if (socket) {
+                socket.off('error');
+            }
+        };
     }, [socket]);
 
     // Function to emit events
@@ -123,7 +192,17 @@ function SocketProvider({ children }) {
         socket,
         emitEvent,
         onEvent,
-        connected
+        connected,
+        rides,
+        handleRideResponse: (rideId, response) => {
+            if (socket?.connected) {
+                socket.emit('ride-response', {
+                    rideId,
+                    captainId: captainData?._id,
+                    response
+                });
+            }
+        }
     };
 
     return (
@@ -133,7 +212,6 @@ function SocketProvider({ children }) {
     );
 }
 
-// Custom hook for using socket context
 export const useSocket = () => {
     const context = useContext(SocketContext);
     if (!context) {

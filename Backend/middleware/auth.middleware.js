@@ -5,26 +5,26 @@ import Blacklist from "../models/blackList.model.js";
 import captainModel from "../models/captain.model.js";
 dotenv.config();
 
-const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-2024";
+const JWT_SECRET = "THIS IS MY SECRET BRO";
 
 const authUser = async (req, res, next) => {
     try {
         const authHeader = req.headers.authorization;
         
         if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            return res.status(401).json({ message: "Invalid authorization header" });
+            return res.status(401).json({ message: "No token provided" });
         }
 
         const token = authHeader.split(' ')[1];
         
         if (!token) {
-            return res.status(401).json({ message: "No token provided" });
+            return res.status(401).json({ message: "Invalid token format" });
         }
 
-        // Use the same JWT_SECRET here
-        const decoded = jwt.verify(token, JWT_SECRET);
+        // Use the correct secret key
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || "THIS IS MY SECRET BRO");
+        
         const user = await userModel.findById(decoded._id);
-
         if (!user) {
             return res.status(401).json({ message: "User not found" });
         }
@@ -33,6 +33,12 @@ const authUser = async (req, res, next) => {
         next();
     } catch (error) {
         console.error("Auth Error:", error);
+        if (error.name === 'JsonWebTokenError') {
+            return res.status(401).json({ message: "Invalid token" });
+        }
+        if (error.name === 'TokenExpiredError') {
+            return res.status(401).json({ message: "Token expired" });
+        }
         return res.status(401).json({ message: "Authentication failed" });
     }
 };

@@ -4,12 +4,27 @@ import Captain from '../models/captain.model.js'; // Import the Captain model
 
 dotenv.config(); // Load the .env file
 
+// Add this error handling middleware
+const handleMapsError = (error) => {
+  console.error('Maps Service Error:', error);
+  if (error.response) {
+    // Google Maps API error
+    throw new Error(`Maps API Error: ${error.response.data.error_message}`);
+  } else if (error.request) {
+    // Network error
+    throw new Error('Network error: Unable to reach maps service');
+  } else {
+    // Other errors
+    throw new Error(error.message);
+  }
+};
+
 // Fetch the coordinates for the given address
 async function getCoordinate(address) {
   try {
-    const apiKey = process.env.MAP_API; // Load API key from environment variables
+    const apiKey = process.env.MAP_API;
     if (!apiKey) {
-      throw new Error("Google Maps API key is not defined in environment variables.");
+      throw new Error("Google Maps API key is not defined");
     }
 
     const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
@@ -17,6 +32,7 @@ async function getCoordinate(address) {
     )}&key=${apiKey}`;
 
     const response = await axios.get(url);
+    
     if (response.data.status === "OK" && response.data.results.length > 0) {
       const location = response.data.results[0].geometry.location;
       return {
@@ -24,11 +40,10 @@ async function getCoordinate(address) {
         long: location.lng,
       };
     } else {
-      throw new Error(`Error fetching geocoding data: ${response.data.status}`);
+      throw new Error(`Geocoding failed: ${response.data.status}`);
     }
   } catch (error) {
-    console.error("Error in getCoordinate:", error.message);
-    throw new Error("Unable to fetch geocoding data. Please try again later.");
+    handleMapsError(error);
   }
 }
 
@@ -66,37 +81,41 @@ async function getDistanceTime(origin, destination) {
 
 // Fetch suggestions for a given input
 async function getSuggestions(input) {
-  console.log("Input has reached services: " + input);
   try {
-    // You can also store the API key in an environment variable if desired.
-    const apiKey = "AIzaSyCQFiCyNnhHEiBglJ_uBNAf3cG3p5a4njA";
+    const apiKey = process.env.MAP_API;
     if (!apiKey) {
-      throw new Error("Google Maps API key is not defined in environment variables.");
+      throw new Error("Google Maps API key not configured");
     }
 
-    if (!input || input.trim() === "") {
-      throw new Error("Input is required for fetching suggestions.");
-    }
+    // Add timeout and retry logic
+    const response = await axios.get(
+      `https://maps.googleapis.com/maps/api/place/autocomplete/json`,
+      {
+        params: {
+          input: input,
+          key: apiKey,
+          types: 'geocode'
+        },
+        timeout: 5000, // 5 second timeout
+        retry: 3 // Retry 3 times
+      }
+    );
 
-    const url = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(
-      input
-    )}&key=${apiKey}&types=geocode`;
-
-    const response = await axios.get(url);
-    if (response.data.status === "OK" && response.data.predictions.length > 0) {
-      // Map the results into a list of suggestions
-      const suggestions = response.data.predictions.map((place) => ({
+    if (response.data.status === "OK") {
+      return response.data.predictions.map(place => ({
         description: place.description,
-        placeId: place.place_id,
+        placeId: place.place_id
       }));
-    
-      return suggestions;
     } else {
-      throw new Error(`Error fetching suggestions: ${response.data.status}`);
+      console.error("Maps API Error:", response.data.status);
+      throw new Error(`Maps API Error: ${response.data.status}`);
     }
   } catch (error) {
-    console.error("Error in getSuggestions:", error.message);
-    throw new Error("Unable to fetch suggestions. Please try again later.");
+    console.error("Error in getSuggestions:", error);
+    if (error.code === 'ENOTFOUND') {
+      throw new Error("Network error: Unable to reach Google Maps API");
+    }
+    throw new Error(error.message || "Failed to fetch suggestions");
   }
 }
 
